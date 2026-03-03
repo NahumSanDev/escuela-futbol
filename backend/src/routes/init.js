@@ -1,5 +1,5 @@
 import express from 'express';
-import { query, pool } from '../config/db.js';
+import { query } from '../config/db.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -158,8 +158,8 @@ router.post('/init', async (req, res) => {
 
     res.json({ message: 'Base de datos inicializada correctamente' });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error al inicializar la base de datos', details: err.message });
+    console.error('Error completo:', err);
+    res.status(500).json({ error: 'Error al inicializar la base de datos', details: err.stack });
   }
 });
 
