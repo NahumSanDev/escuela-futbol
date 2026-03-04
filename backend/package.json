@@ -11,7 +11,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "name": "cefor-backend",
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
