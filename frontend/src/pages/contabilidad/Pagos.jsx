@@ -41,10 +41,6 @@ export default function Pagos() {
       setLoading(false);
     }
   };
-    } catch (err) {
-      return [];
-    }
-  };
 
   const pagosFiltrados = filtroJugador
     ? pagos.filter(p => p.jugador_id === parseInt(filtroJugador))
