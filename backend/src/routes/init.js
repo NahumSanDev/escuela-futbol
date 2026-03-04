@@ -1,91 +1,97 @@
 import express from 'express';
 import { query } from '../config/db.js';
-import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
-const INIT_SQL = `
--- Tablas
-CREATE TABLE IF NOT EXISTS usuarios (
-    id SERIAL PRIMARY KEY,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    nombre VARCHAR(255) NOT NULL,
-    telefono VARCHAR(50),
-    rol VARCHAR(20) NOT NULL CHECK (rol IN ('admin', 'padre')),
-    activo BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS familias (
-    id SERIAL PRIMARY KEY,
-    usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
-    nombre_jugador VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS codigos_registro (
-    id SERIAL PRIMARY KEY,
-    codigo VARCHAR(50) UNIQUE NOT NULL,
-    usado BOOLEAN DEFAULT false,
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS pagos (
-    id SERIAL PRIMARY KEY,
-    jugador_id INTEGER REFERENCES familias(id) ON DELETE CASCADE,
-    fecha DATE NOT NULL,
-    monto DECIMAL(10, 2) NOT NULL,
-    concepto VARCHAR(100) NOT NULL,
-    metodo_pago VARCHAR(50) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS partidos (
-    id SERIAL PRIMARY KEY,
-    rival VARCHAR(255) NOT NULL,
-    fecha DATE NOT NULL,
-    hora VARCHAR(10),
-    lugar VARCHAR(255),
-    estado VARCHAR(20) DEFAULT 'pendiente' CHECK (estado IN ('pendiente', 'jugado', 'cancelado')),
-    resultado_local INTEGER,
-    resultado_visitante INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS avisos (
-    id SERIAL PRIMARY KEY,
-    titulo VARCHAR(255) NOT NULL,
-    descripcion TEXT,
-    archivo_url VARCHAR(500),
-    publicado_por INTEGER REFERENCES usuarios(id),
-    fecha_publicacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS productos (
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(255) NOT NULL,
-    descripcion TEXT,
-    precio DECIMAL(10, 2) NOT NULL,
-    categoria VARCHAR(100) NOT NULL,
-    imagen_url VARCHAR(500),
-    activo BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Verificar si ya hay datos
-SELECT COUNT(*) INTO @count FROM usuarios WHERE email = 'admin@cefor.com';
-`;
-
 router.post('/init', async (req, res) => {
   try {
-    const statements = INIT_SQL.split(';').filter(s => s.trim());
-    
-    for (const statement of statements) {
-      if (statement.trim()) {
-        await query(statement);
-      }
-    }
+    // Tabla usuarios
+    await query(`
+      CREATE TABLE IF NOT EXISTS usuarios (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        nombre VARCHAR(255) NOT NULL,
+        telefono VARCHAR(50),
+        rol VARCHAR(20) NOT NULL CHECK (rol IN ('admin', 'padre')),
+        activo BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Tabla familias
+    await query(`
+      CREATE TABLE IF NOT EXISTS familias (
+        id SERIAL PRIMARY KEY,
+        usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+        nombre_jugador VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Tabla codigos_registro
+    await query(`
+      CREATE TABLE IF NOT EXISTS codigos_registro (
+        id SERIAL PRIMARY KEY,
+        codigo VARCHAR(50) UNIQUE NOT NULL,
+        usado BOOLEAN DEFAULT false,
+        fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Tabla pagos
+    await query(`
+      CREATE TABLE IF NOT EXISTS pagos (
+        id SERIAL PRIMARY KEY,
+        jugador_id INTEGER REFERENCES familias(id) ON DELETE CASCADE,
+        fecha DATE NOT NULL,
+        monto DECIMAL(10, 2) NOT NULL,
+        concepto VARCHAR(100) NOT NULL,
+        metodo_pago VARCHAR(50) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Tabla partidos
+    await query(`
+      CREATE TABLE IF NOT EXISTS partidos (
+        id SERIAL PRIMARY KEY,
+        rival VARCHAR(255) NOT NULL,
+        fecha DATE NOT NULL,
+        hora VARCHAR(10),
+        lugar VARCHAR(255),
+        estado VARCHAR(20) DEFAULT 'pendiente' CHECK (estado IN ('pendiente', 'jugado', 'cancelado')),
+        resultado_local INTEGER,
+        resultado_visitante INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Tabla avisos
+    await query(`
+      CREATE TABLE IF NOT EXISTS avisos (
+        id SERIAL PRIMARY KEY,
+        titulo VARCHAR(255) NOT NULL,
+        descripcion TEXT,
+        archivo_url VARCHAR(500),
+        publicado_por INTEGER REFERENCES usuarios(id),
+        fecha_publicacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Tabla productos
+    await query(`
+      CREATE TABLE IF NOT EXISTS productos (
+        id SERIAL PRIMARY KEY,
+        nombre VARCHAR(255) NOT NULL,
+        descripcion TEXT,
+        precio DECIMAL(10, 2) NOT NULL,
+        categoria VARCHAR(100) NOT NULL,
+        imagen_url VARCHAR(500),
+        activo BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
     // Insertar admin si no existe (password: 1234)
     const adminCheck = await query(
@@ -120,15 +126,6 @@ router.post('/init', async (req, res) => {
       }
     }
 
-    // Insertar pagos de ejemplo
-    const pagosCheck = await query("SELECT COUNT(*) FROM pagos");
-    if (parseInt(pagosCheck.rows[0].count) === 0) {
-      await query("INSERT INTO pagos (jugador_id, fecha, monto, concepto, metodo_pago) VALUES (1, '2026-03-01', 50.00, 'Mensualidad', 'Transferencia')");
-      await query("INSERT INTO pagos (jugador_id, fecha, monto, concepto, metodo_pago) VALUES (2, '2026-03-02', 35.00, 'Uniforme', 'Efectivo')");
-      await query("INSERT INTO pagos (jugador_id, fecha, monto, concepto, metodo_pago) VALUES (1, '2026-02-15', 50.00, 'Mensualidad', 'Bizum')");
-      await query("INSERT INTO pagos (jugador_id, fecha, monto, concepto, metodo_pago) VALUES (3, '2026-02-20', 25.00, 'Torneo', 'Tarjeta')");
-    }
-
     // Insertar partidos
     const partidosCheck = await query("SELECT COUNT(*) FROM partidos");
     if (parseInt(partidosCheck.rows[0].count) === 0) {
@@ -159,7 +156,7 @@ router.post('/init', async (req, res) => {
     res.json({ message: 'Base de datos inicializada correctamente' });
   } catch (err) {
     console.error('Error completo:', err);
-    res.status(500).json({ error: 'Error al inicializar la base de datos', details: err.stack });
+    res.status(500).json({ error: 'Error al inicializar la base de datos', details: err.message });
   }
 });
 
