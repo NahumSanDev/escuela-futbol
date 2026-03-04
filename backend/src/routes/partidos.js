@@ -32,7 +32,7 @@ router.get('/resultados', authenticateToken, async (req, res) => {
   }
 });
 
-router.get('/', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/', authenticateToken, async (req, res) => {
   try {
     const result = await query('SELECT * FROM partidos ORDER BY fecha DESC');
     res.json(result.rows);
