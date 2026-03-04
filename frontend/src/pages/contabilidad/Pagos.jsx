@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FiPlus, FiDownload, FiEdit2, FiTrash2 } from 'react-icons/fi';
-import { pagosService } from '../../services/api';
+import { pagosService, familiasService } from '../../services/api';
 import * as XLSX from 'xlsx';
 
 const CONCEPTOS = ['Mensualidad', 'Uniforme', 'Equipo', 'Torneo', 'Otro'];
@@ -31,23 +31,16 @@ export default function Pagos() {
     try {
       const [pagosData, familiasData] = await Promise.all([
         pagosService.getAll(),
-        fetchFamilias()
+        familiasService.getAll()
       ]);
-      setPagos(pagosData);
-      setFamilias(familiasData);
+      setPagos(pagosData.pagos || []);
+      setFamilias(familiasData || []);
     } catch (err) {
       console.error('Error:', err);
     } finally {
       setLoading(false);
     }
   };
-
-  const fetchFamilias = async () => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://escuela-futbol-production.up.railway.app/api'}/familias`);
-      const data = await response.json();
-      setFamilias(data);
-      return data;
     } catch (err) {
       return [];
     }

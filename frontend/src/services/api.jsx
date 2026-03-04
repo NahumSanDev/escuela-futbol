@@ -71,4 +71,8 @@ export const codigosService = {
   generate: () => fetchAPI('/codigos', { method: 'POST' }),
 };
 
+export const familiasService = {
+  getAll: () => fetchAPI('/familias'),
+};
+
 export default API_URL;
