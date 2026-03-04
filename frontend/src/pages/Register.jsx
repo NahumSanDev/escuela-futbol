@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { authService } from '../services/api';
 import { FiUser, FiLock, FiPhone, FiMail } from 'react-icons/fi';
 
 export default function Register() {
@@ -21,24 +22,19 @@ export default function Register() {
     setLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      
-      if (codigo !== 'FAMILIA2024') {
-        setError('Código de registro inválido');
-        return;
-      }
-
-      login({
-        id: Date.now(),
-        email,
+      const data = await authService.register({
+        codigo,
         nombre: nombrePadre,
         nombre_jugador: nombreJugador,
         telefono,
-        rol: 'padre'
+        email,
+        password
       });
+      localStorage.setItem('cefor_token', data.token);
+      login(data.user);
       navigate('/');
     } catch (err) {
-      setError('Error al registrar');
+      setError(err.message || 'Error al registrar');
     } finally {
       setLoading(false);
     }

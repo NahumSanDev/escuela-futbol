@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { authService } from '../services/api';
 import { FiUser, FiLock } from 'react-icons/fi';
 
 export default function Login() {
@@ -17,30 +18,12 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      
-      if (email === 'admin@cefor.com' && password === '1234') {
-        login({
-          id: 1,
-          email,
-          nombre: 'Administrador',
-          rol: 'admin'
-        });
-        navigate('/');
-      } else if (email && password.length >= 4) {
-        login({
-          id: 2,
-          email,
-          nombre: 'Padre/Jugador',
-          nombre_jugador: 'Jugador Demo',
-          rol: 'padre'
-        });
-        navigate('/');
-      } else {
-        setError('Credenciales inválidas');
-      }
+      const data = await authService.login(email, password);
+      localStorage.setItem('cefor_token', data.token);
+      login(data.user);
+      navigate('/');
     } catch (err) {
-      setError('Error al iniciar sesión');
+      setError(err.message || 'Credenciales inválidas');
     } finally {
       setLoading(false);
     }
