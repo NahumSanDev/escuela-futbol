@@ -53,7 +53,9 @@ export default function Calendario() {
   const getPartidosForDate = (date) => {
     if (!date) return [];
     const dateStr = date.toISOString().split('T')[0];
-    return partidos.filter(p => p.fecha === dateStr);
+    const matches = partidos.filter(p => p.fecha && p.fecha.startsWith(dateStr));
+    console.log('Partidos for', dateStr, matches);
+    return matches;
   };
 
   const prevMonth = () => {

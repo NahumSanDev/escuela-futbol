@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { FiPlus, FiFile, FiImage, FiX, FiTrash2, FiUpload } from 'react-icons/fi';
+import { useState, useEffect } from 'react';
+import { FiPlus, FiFile, FiX, FiTrash2 } from 'react-icons/fi';
 import { avisosService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
@@ -8,13 +8,11 @@ export default function Avisos() {
   const [avisos, setAvisos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [nuevoAviso, setNuevoAviso] = useState({
     titulo: '',
     descripcion: '',
     archivo_url: ''
   });
-  const fileInputRef = useRef(null);
 
   useEffect(() => {
     fetchData();
@@ -31,32 +29,12 @@ export default function Avisos() {
     }
   };
 
-  const handleFileChange = async (e) => {
+  const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch('https://api.imgbb.com/1/upload?key=d36eb6591370ae7f9089d85875571358', {
-        method: 'POST',
-        body: formData
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        setNuevoAviso({ ...nuevoAviso, archivo_url: data.data.url });
-      } else {
-        alert('Error al subir archivo');
-      }
-    } catch (err) {
-      console.error('Error:', err);
-      alert('Error al subir archivo');
-    } finally {
-      setUploading(false);
-    }
+    const url = URL.createObjectURL(file);
+    setNuevoAviso({ ...nuevoAviso, archivo_url: url });
   };
 
   const handleSubmit = async (e) => {
@@ -174,37 +152,17 @@ export default function Avisos() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Archivo Adjunto (imagen o PDF)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">URL del archivo (imagen o PDF)</label>
                 <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  accept="image/*,.pdf"
-                  className="hidden"
+                  type="url"
+                  value={nuevoAviso.archivo_url}
+                  onChange={(e) => setNuevoAviso({ ...nuevoAviso, archivo_url: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  placeholder="https://ejemplo.com/archivo.pdf"
                 />
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
-                    className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    <FiUpload size={18} />
-                    <span>{uploading ? 'Subiendo...' : 'Seleccionar archivo'}</span>
-                  </button>
-                  {nuevoAviso.archivo_url && (
-                    <span className="text-sm text-green-600">✓ Archivo seleccionado</span>
-                  )}
-                </div>
-                {nuevoAviso.archivo_url && (
-                  <input
-                    type="text"
-                    value={nuevoAviso.archivo_url}
-                    onChange={(e) => setNuevoAviso({ ...nuevoAviso, archivo_url: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg mt-2"
-                    placeholder="O pega una URL directamente"
-                  />
-                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  Ejemplo: https://nagasasa.github.io/escuela-futbol/aviso.pdf
+                </p>
               </div>
               <div className="flex space-x-3">
                 <button type="button" onClick={closeModal} className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">
