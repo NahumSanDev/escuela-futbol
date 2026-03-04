@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FiCalendar, FiPlus, FiX } from 'react-icons/fi';
+import { FiCalendar, FiPlus, FiX, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { partidosService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
@@ -8,6 +8,7 @@ export default function Resultados() {
   const [loading, setLoading] = useState(true);
   const { isAdmin } = useAuth();
   const [showModal, setShowModal] = useState(false);
+  const [editando, setEditando] = useState(null);
   const [nuevoResultado, setNuevoResultado] = useState({
     rival: '',
     fecha: '',
@@ -48,6 +49,45 @@ export default function Resultados() {
     }
   };
 
+  const handleEdit = (partido) => {
+    setEditando(partido);
+    setNuevoResultado({
+      rival: partido.rival,
+      fecha: partido.fecha,
+      hora: partido.hora || '',
+      lugar: partido.lugar || '',
+      resultado_local: partido.resultado_local,
+      resultado_visitante: partido.resultado_visitante,
+      estado: 'jugado'
+    });
+    setShowModal(true);
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    try {
+      await partidosService.update(editando.id, nuevoResultado);
+      await fetchData();
+      setShowModal(false);
+      setEditando(null);
+      setNuevoResultado({
+        rival: '', fecha: '', hora: '', lugar: '',
+        resultado_local: '', resultado_visitante: '', estado: 'jugado'
+      });
+    } catch (err) {
+      alert('Error al actualizar resultado');
+    }
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditando(null);
+    setNuevoResultado({
+      rival: '', fecha: '', hora: '', lugar: '',
+      resultado_local: '', resultado_visitante: '', estado: 'jugado'
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -82,6 +122,16 @@ export default function Resultados() {
                   <span>{resultado.fecha}</span>
                 </div>
                 <p className="text-sm text-gray-500">{resultado.lugar}</p>
+                {isAdmin && (
+                  <div className="flex justify-end mt-2">
+                    <button
+                      onClick={() => handleEdit(resultado)}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                    >
+                      <FiEdit2 size={18} />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -98,10 +148,10 @@ export default function Resultados() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Nuevo Resultado</h2>
-              <button onClick={() => setShowModal(false)}><FiX /></button>
+              <h2 className="text-xl font-bold">{editando ? 'Editar Resultado' : 'Nuevo Resultado'}</h2>
+              <button onClick={closeModal}><FiX /></button>
             </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={editando ? handleUpdate : handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Rival</label>
                 <input
@@ -151,13 +201,12 @@ export default function Resultados() {
                   value={nuevoResultado.lugar}
                   onChange={(e) => setNuevoResultado({ ...nuevoResultado, lugar: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  required
                 />
               </div>
               <div className="flex space-x-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
+                  onClick={closeModal}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   Cancelar
@@ -166,7 +215,7 @@ export default function Resultados() {
                   type="submit"
                   className="flex-1 px-4 py-2 bg-[#00A651] text-white rounded-lg hover:bg-[#008f45]"
                 >
-                  Guardar
+                  {editando ? 'Actualizar' : 'Guardar'}
                 </button>
               </div>
             </form>

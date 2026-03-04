@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FiShoppingCart, FiPlus, FiEdit2, FiTrash2, FiX } from 'react-icons/fi';
 import { productosService } from '../../services/api';
+import { formatCurrency } from '../../utils/formatters';
 import { useAuth } from '../../context/AuthContext';
 
 const CATEGORIAS = ['Todos', 'Uniformes', 'Equipaciones', 'Complementos', 'Balones', 'Bolsas'];
@@ -109,7 +110,7 @@ export default function Market() {
                 <h3 className="font-semibold text-gray-800">{producto.nombre}</h3>
                 <p className="text-sm text-gray-500 mb-2">{producto.descripcion}</p>
                 <div className="flex justify-between items-center">
-                  <span className="text-lg font-bold text-[#00A651]">€{producto.precio}</span>
+                  <span className="text-lg font-bold text-[#00A651]">{formatCurrency(producto.precio)}</span>
                   {!isAdmin && (
                     <button className="p-2 bg-[#00A651] text-white rounded-lg hover:bg-[#008f45]">
                       <FiShoppingCart size={18} />
@@ -166,7 +167,7 @@ export default function Market() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Precio (€)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Precio ($)</label>
                 <input
                   type="number"
                   step="0.01"

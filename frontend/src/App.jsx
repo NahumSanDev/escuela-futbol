@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Pagos from './pages/contabilidad/Pagos';
 import Partidos from './pages/partidos/Partidos';
 import Resultados from './pages/partidos/Resultados';
+import Calendario from './pages/partidos/Calendario';
 import Avisos from './pages/avisos/Avisos';
 import Market from './pages/market/Market';
 import Perfil from './pages/perfil/Perfil';
@@ -49,6 +50,7 @@ function Router() {
         } />
         <Route path="partidos" element={<Partidos />} />
         <Route path="resultados" element={<Resultados />} />
+        <Route path="calendario" element={<Calendario />} />
         <Route path="avisos" element={<Avisos />} />
         <Route path="market" element={<Market />} />
         <Route path="perfil" element={<Perfil />} />

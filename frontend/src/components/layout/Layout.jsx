@@ -17,6 +17,8 @@ export default function Layout() {
     { to: '/', icon: FiHome, label: 'Inicio', exact: true },
     ...(isAdmin ? [{ to: '/pagos', icon: FiDollarSign, label: 'Pagos' }] : []),
     { to: '/partidos', icon: FiCalendar, label: 'Partidos' },
+    { to: '/calendario', icon: FiCalendar, label: 'Calendario' },
+    { to: '/resultados', icon: FiCalendar, label: 'Resultados' },
     { to: '/avisos', icon: FiBell, label: 'Avisos' },
     { to: '/market', icon: FiShoppingBag, label: 'Market' },
     { to: '/perfil', icon: FiUser, label: 'Perfil' },

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { partidosService, avisosService, productosService } from '../services/api';
+import { formatCurrency } from '../utils/formatters';
 import { FiCalendar, FiDollarSign, FiBell, FiShoppingBag, FiUser } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 
@@ -146,7 +147,7 @@ export default function Dashboard() {
               {productos.map((producto, i) => (
                 <div key={i} className="border rounded-lg p-3 text-center hover:border-[#00A651] transition-colors">
                   <p className="font-medium">{producto.nombre}</p>
-                  <p className="text-[#00A651] font-bold">€{producto.precio}</p>
+                  <p className="text-[#00A651] font-bold">{formatCurrency(producto.precio)}</p>
                 </div>
               ))}
             </div>

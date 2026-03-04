@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FiPlus, FiDownload, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { pagosService, familiasService } from '../../services/api';
+import { formatCurrency } from '../../utils/formatters';
 import * as XLSX from 'xlsx';
 
 const CONCEPTOS = ['Mensualidad', 'Uniforme', 'Equipo', 'Torneo', 'Otro'];
@@ -147,7 +148,7 @@ export default function Pagos() {
                 <tr key={pago.id} className="border-t hover:bg-gray-50">
                   <td className="px-4 py-3">{getJugadorNombre(pago.jugador_id)}</td>
                   <td className="px-4 py-3">{pago.fecha}</td>
-                  <td className="px-4 py-3 font-medium">€{pago.monto}</td>
+                  <td className="px-4 py-3 font-medium">{formatCurrency(pago.monto)}</td>
                   <td className="px-4 py-3">{pago.concepto}</td>
                   <td className="px-4 py-3">{pago.metodo}</td>
                   <td className="px-4 py-3">
@@ -219,7 +220,7 @@ export default function Pagos() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Monto (€)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Monto ($)</label>
                 <input
                   type="number"
                   step="0.01"
