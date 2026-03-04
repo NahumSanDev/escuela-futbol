@@ -70,6 +70,19 @@ export default function Calendario() {
 
   const days = getDaysInMonth(currentDate);
 
+  const getPartidoColor = (partido) => {
+    if (partido.estado !== 'jugado') {
+      return 'bg-gray-200 text-gray-600';
+    }
+    if (partido.resultado_local > partido.resultado_visitante) {
+      return 'bg-green-500 text-white';
+    }
+    if (partido.resultado_local < partido.resultado_visitante) {
+      return 'bg-orange-500 text-white';
+    }
+    return 'bg-yellow-400 text-gray-800';
+  };
+
   return (
       <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-800">Calendario de Partidos</h1>
@@ -115,11 +128,8 @@ export default function Calendario() {
                     {partidosDia.map(partido => (
                       <div
                         key={partido.id}
-                        className={`text-xs p-1 rounded mt-1 truncate ${
-                          partido.estado === 'jugado'
-                            ? 'bg-gray-200 text-gray-600'
-                            : 'bg-[#00A651] text-white'
-                        }`}
+                        className={`text-xs p-1 rounded mt-1 truncate ${getPartidoColor(partido)}`}
+                        title={partido.estado === 'jugado' ? `${partido.resultado_local} - ${partido.resultado_visitante}` : 'Por jugar'}
                       >
                         {partido.rival}
                       </div>
@@ -133,6 +143,13 @@ export default function Calendario() {
       </div>
 
       <div className="bg-white rounded-xl shadow-md p-4">
+        <h3 className="font-semibold mb-3">Leyenda</h3>
+        <div className="flex flex-wrap gap-2 mb-4">
+          <span className="px-2 py-1 rounded text-xs bg-green-500 text-white">Ganado</span>
+          <span className="px-2 py-1 rounded text-xs bg-yellow-400 text-gray-800">Empate</span>
+          <span className="px-2 py-1 rounded text-xs bg-orange-500 text-white">Perdido</span>
+          <span className="px-2 py-1 rounded text-xs bg-gray-200 text-gray-600">Por jugar</span>
+        </div>
         <h3 className="font-semibold mb-3">Próximos Partidos</h3>
         <div className="space-y-2">
           {partidos
