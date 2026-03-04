@@ -1,4 +1,4 @@
-const API_URL = 'https://escuela-futbol-production.up.railway.app/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://escuela-futbol-production.up.railway.app/api';
 
 async function fetchAPI(endpoint, options = {}) {
   const token = localStorage.getItem('cefor_token');

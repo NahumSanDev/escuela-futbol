@@ -1,42 +1,176 @@
-import { FiCalendar } from 'react-icons/fi';
-
-const RESULTADOS = [
-  { id: 1, rival: 'Atlético Madrid', resultado_local: 3, resultado_visitante: 1, fecha: '2026-03-01', lugar: 'Campo CEFOR' },
-  { id: 2, rival: 'Sevilla FC', resultado_local: 2, resultado_visitante: 2, fecha: '2026-02-22', lugar: 'Campo Sevilla' },
-  { id: 3, rival: 'Valencia CF', resultado_local: 1, resultado_visitante: 0, fecha: '2026-02-15', lugar: 'Campo CEFOR' },
-  { id: 4, rival: 'Villarreal', resultado_local: 4, resultado_visitante: 2, fecha: '2026-02-08', lugar: 'Campo Villarreal' },
-  { id: 5, rival: 'Betis', resultado_local: 2, resultado_visitante: 3, fecha: '2026-02-01', lugar: 'Campo CEFOR' },
-];
+import { useState, useEffect } from 'react';
+import { FiCalendar, FiPlus, FiX } from 'react-icons/fi';
+import { partidosService } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Resultados() {
+  const [partidos, setPartidos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { isAdmin } = useAuth();
+  const [showModal, setShowModal] = useState(false);
+  const [nuevoResultado, setNuevoResultado] = useState({
+    rival: '',
+    fecha: '',
+    hora: '',
+    lugar: '',
+    resultado_local: '',
+    resultado_visitante: '',
+    estado: 'jugado'
+  });
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const data = await partidosService.getAll();
+      setPartidos(data.filter(p => p.estado === 'jugado'));
+    } catch (err) {
+      console.error('Error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await partidosService.create(nuevoResultado);
+      await fetchData();
+      setShowModal(false);
+      setNuevoResultado({
+        rival: '', fecha: '', hora: '', lugar: '',
+        resultado_local: '', resultado_visitante: '', estado: 'jugado'
+      });
+    } catch (err) {
+      alert('Error al crear resultado');
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">Resultados</h1>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {RESULTADOS.map((resultado) => (
-          <div key={resultado.id} className="bg-white rounded-xl shadow-md overflow-hidden">
-            <div className="bg-gradient-to-r from-[#00A651] to-green-400 text-white p-4">
-              <div className="flex items-center justify-between text-lg font-bold">
-                <span>CEFOR</span>
-                <span className="text-3xl">{resultado.resultado_local} - {resultado.resultado_visitante}</span>
-                <span>{resultado.rival}</span>
-              </div>
-            </div>
-            <div className="p-4">
-              <div className="flex items-center text-gray-600 mb-2">
-                <FiCalendar className="mr-2" />
-                <span>{resultado.fecha}</span>
-              </div>
-              <p className="text-sm text-gray-500">{resultado.lugar}</p>
-            </div>
-          </div>
-        ))}
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-800">Resultados</h1>
+        {isAdmin && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center space-x-2 bg-[#00A651] text-white px-4 py-2 rounded-lg hover:bg-[#008f45]"
+          >
+            <FiPlus size={18} />
+            <span>Nuevo Resultado</span>
+          </button>
+        )}
       </div>
 
-      {RESULTADOS.length === 0 && (
+      {loading ? (
+        <p className="text-center text-gray-500">Cargando...</p>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {partidos.map((resultado) => (
+            <div key={resultado.id} className="bg-white rounded-xl shadow-md overflow-hidden">
+              <div className="bg-gradient-to-r from-[#00A651] to-green-400 text-white p-4">
+                <div className="flex items-center justify-between text-lg font-bold">
+                  <span>CEFOR</span>
+                  <span className="text-3xl">{resultado.resultado_local} - {resultado.resultado_visitante}</span>
+                  <span>{resultado.rival}</span>
+                </div>
+              </div>
+              <div className="p-4">
+                <div className="flex items-center text-gray-600 mb-2">
+                  <FiCalendar className="mr-2" />
+                  <span>{resultado.fecha}</span>
+                </div>
+                <p className="text-sm text-gray-500">{resultado.lugar}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {partidos.length === 0 && !loading && (
         <div className="text-center py-12 text-gray-500">
           No hay resultados registrados
+        </div>
+      )}
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Nuevo Resultado</h2>
+              <button onClick={() => setShowModal(false)}><FiX /></button>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Rival</label>
+                <input
+                  type="text"
+                  value={nuevoResultado.rival}
+                  onChange={(e) => setNuevoResultado({ ...nuevoResultado, rival: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Goles CEFOR</label>
+                  <input
+                    type="number"
+                    value={nuevoResultado.resultado_local}
+                    onChange={(e) => setNuevoResultado({ ...nuevoResultado, resultado_local: parseInt(e.target.value) })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Goles Rival</label>
+                  <input
+                    type="number"
+                    value={nuevoResultado.resultado_visitante}
+                    onChange={(e) => setNuevoResultado({ ...nuevoResultado, resultado_visitante: parseInt(e.target.value) })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                <input
+                  type="date"
+                  value={nuevoResultado.fecha}
+                  onChange={(e) => setNuevoResultado({ ...nuevoResultado, fecha: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Lugar</label>
+                <input
+                  type="text"
+                  value={nuevoResultado.lugar}
+                  onChange={(e) => setNuevoResultado({ ...nuevoResultado, lugar: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+              <div className="flex space-x-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-[#00A651] text-white rounded-lg hover:bg-[#008f45]"
+                >
+                  Guardar
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

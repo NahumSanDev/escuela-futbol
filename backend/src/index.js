@@ -7,6 +7,7 @@ import partidosRoutes from './routes/partidos.js';
 import avisosRoutes from './routes/avisos.js';
 import productosRoutes from './routes/productos.js';
 import codigosRoutes from './routes/codigos.js';
+import familiasRoutes from './routes/familias.js';
 import initRoutes from './routes/init.js';
 
 dotenv.config();
@@ -23,6 +24,7 @@ app.use('/api/partidos', partidosRoutes);
 app.use('/api/avisos', avisosRoutes);
 app.use('/api/productos', productosRoutes);
 app.use('/api/codigos', codigosRoutes);
+app.use('/api/familias', familiasRoutes);
 app.use('/api/init', initRoutes);
 
 app.get('/api/health', (req, res) => {

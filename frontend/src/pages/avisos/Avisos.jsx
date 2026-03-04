@@ -1,18 +1,55 @@
-import { useState } from 'react';
-import { FiPlus, FiFile, FiImage } from 'react-icons/fi';
+import { useState, useEffect } from 'react';
+import { FiPlus, FiFile, FiImage, FiX, FiTrash2 } from 'react-icons/fi';
+import { avisosService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
-const AVISOS = [
-  { id: 1, titulo: 'Torneo Primavera 2026', descripcion: 'Inscripciones abiertas para el torneo de primavera. Fecha límite: 15 de marzo.', fecha: '2026-03-02', archivo: true },
-  { id: 2, titulo: 'Uniformes Disponibles', descripcion: 'Nuevos uniformes disponibles en la tienda. Consulta tallas en secretaría.', fecha: '2026-02-28', archivo: false },
-  { id: 3, titulo: 'Partido contra Real Madrid', descripcion: 'Recordatorio del partido este domingo. Hora de encuentro: 9:30.', fecha: '2026-02-25', archivo: true },
-  { id: 4, titulo: 'Cambio de Horario', descripcion: 'A partir de abril, los entrenamientos serán de 17:00 a 18:30.', fecha: '2026-02-20', archivo: false },
-];
-
 export default function Avisos() {
-  const { isAdmin } = useAuth();
-  const [avisos] = useState(AVISOS);
+  const { isAdmin, user } = useAuth();
+  const [avisos, setAvisos] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [nuevoAviso, setNuevoAviso] = useState({
+    titulo: '',
+    descripcion: ''
+  });
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const data = await avisosService.getAll();
+      setAvisos(data);
+    } catch (err) {
+      console.error('Error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await avisosService.create(nuevoAviso);
+      await fetchData();
+      setShowModal(false);
+      setNuevoAviso({ titulo: '', descripcion: '' });
+    } catch (err) {
+      alert('Error al crear aviso');
+    }
+  };
+
+  const eliminarAviso = async (id) => {
+    if (confirm('¿Estás seguro de eliminar este aviso?')) {
+      try {
+        await avisosService.delete(id);
+        setAvisos(avisos.filter(a => a.id !== id));
+      } catch (err) {
+        alert('Error al eliminar aviso');
+      }
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -29,25 +66,38 @@ export default function Avisos() {
         )}
       </div>
 
-      <div className="space-y-4">
-        {avisos.map((aviso) => (
-          <div key={aviso.id} className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="text-lg font-semibold text-gray-800">{aviso.titulo}</h3>
-              <span className="text-sm text-gray-500">{aviso.fecha}</span>
-            </div>
-            <p className="text-gray-600 mb-4">{aviso.descripcion}</p>
-            {aviso.archivo && (
-              <div className="flex items-center space-x-2 text-[#00A651]">
-                <FiFile size={18} />
-                <span className="text-sm hover:underline cursor-pointer">Ver archivo adjunto</span>
+      {loading ? (
+        <p className="text-center text-gray-500">Cargando...</p>
+      ) : (
+        <div className="space-y-4">
+          {avisos.map((aviso) => (
+            <div key={aviso.id} className="bg-white rounded-xl shadow-md p-6">
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="text-lg font-semibold text-gray-800">{aviso.titulo}</h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">{aviso.fecha_publicacion?.split('T')[0]}</span>
+                  {isAdmin && (
+                    <button onClick={() => eliminarAviso(aviso.id)} className="text-red-500 hover:bg-red-50 p-1 rounded">
+                      <FiTrash2 size={16} />
+                    </button>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
-        ))}
-      </div>
+              <p className="text-gray-600 mb-4">{aviso.descripcion}</p>
+              {aviso.archivo_url && (
+                <div className="flex items-center space-x-2 text-[#00A651]">
+                  <FiFile size={18} />
+                  <a href={aviso.archivo_url} target="_blank" rel="noopener noreferrer" className="text-sm hover:underline">
+                    Ver archivo adjunto
+                  </a>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
-      {avisos.length === 0 && (
+      {avisos.length === 0 && !loading && (
         <div className="text-center py-12 text-gray-500">
           No hay avisos publicados
         </div>
@@ -56,22 +106,30 @@ export default function Avisos() {
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Publicar Aviso</h2>
-            <form className="space-y-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Publicar Aviso</h2>
+              <button onClick={() => setShowModal(false)}><FiX /></button>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
-                <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-lg" required />
+                <input
+                  type="text"
+                  value={nuevoAviso.titulo}
+                  onChange={(e) => setNuevoAviso({ ...nuevoAviso, titulo: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-                <textarea rows={4} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Adjuntar archivo</label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-[#00A651]">
-                  <FiImage className="mx-auto text-gray-400 mb-2" />
-                  <span className="text-sm text-gray-500">Arrastra o selecciona archivo</span>
-                </div>
+                <textarea
+                  rows={4}
+                  value={nuevoAviso.descripcion}
+                  onChange={(e) => setNuevoAviso({ ...nuevoAviso, descripcion: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
               </div>
               <div className="flex space-x-3">
                 <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">
