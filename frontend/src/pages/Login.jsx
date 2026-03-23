@@ -1,29 +1,29 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { authService } from '../services/api';
-import { FiUser, FiLock } from 'react-icons/fi';
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { authService } from "../services/api";
+import { FiUser, FiLock } from "react-icons/fi";
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
       const data = await authService.login(email, password);
-      localStorage.setItem('cefor_token', data.token);
+      localStorage.setItem("cefor_token", data.token);
       login(data.user);
-      navigate('/');
+      navigate("/");
     } catch (err) {
-      setError(err.message || 'Credenciales inválidas');
+      setError(err.message || "Credenciales inválidas");
     } finally {
       setLoading(false);
     }
@@ -79,7 +79,7 @@ export default function Login() {
             disabled={loading}
             className="w-full bg-[#00A651] text-white py-3 rounded-lg font-semibold hover:bg-[#008f45] transition-colors disabled:opacity-50"
           >
-            {loading ? 'Iniciando...' : 'Iniciar Sesión'}
+            {loading ? "Iniciando..." : "Iniciar Sesión"}
           </button>
         </form>
 
@@ -87,12 +87,6 @@ export default function Login() {
           <Link to="/register" className="text-[#00A651] hover:underline">
             ¿No tienes cuenta? Regístrate aquí
           </Link>
-        </div>
-
-        <div className="mt-4 p-4 bg-gray-100 rounded-lg text-sm text-gray-600">
-          <p className="font-semibold mb-2">Demo:</p>
-          <p>Admin: admin@cefor.com / 1234</p>
-          <p>Padre: cualquier email / 4 dígitos</p>
         </div>
       </div>
     </div>
