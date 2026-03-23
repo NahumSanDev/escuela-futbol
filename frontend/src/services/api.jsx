@@ -66,6 +66,13 @@ export const avisosService = {
   delete: (id) => fetchAPI(`/avisos/${id}`, { method: "DELETE" }),
 };
 
+export const comentariosService = {
+  getByAviso: (avisoId) => fetchAPI(`/comentarios/aviso/${avisoId}`),
+  create: (data) =>
+    fetchAPI("/comentarios", { method: "POST", body: JSON.stringify(data) }),
+  delete: (id) => fetchAPI(`/comentarios/${id}`, { method: "DELETE" }),
+};
+
 export const productosService = {
   getAll: () => fetchAPI("/productos"),
   create: (data) =>

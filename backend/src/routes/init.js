@@ -83,6 +83,25 @@ router.post("/init", async (req, res) => {
       )
     `);
 
+    // Tabla comentarios
+    await query(`
+      CREATE TABLE IF NOT EXISTS comentarios (
+        id SERIAL PRIMARY KEY,
+        aviso_id INTEGER REFERENCES avisos(id) ON DELETE CASCADE,
+        usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+        mensaje TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Índices para comentarios
+    await query(`
+      CREATE INDEX IF NOT EXISTS idx_comentarios_aviso ON comentarios(aviso_id)
+    `);
+    await query(`
+      CREATE INDEX IF NOT EXISTS idx_comentarios_usuario ON comentarios(usuario_id)
+    `);
+
     res.json({ message: "Base de datos inicializada correctamente" });
   } catch (err) {
     console.error("Error completo:", err);
