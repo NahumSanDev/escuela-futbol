@@ -20,14 +20,6 @@ CREATE TABLE familias (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla de códigos de registro
-CREATE TABLE codigos_registro (
-    id SERIAL PRIMARY KEY,
-    codigo VARCHAR(50) UNIQUE NOT NULL,
-    usado BOOLEAN DEFAULT false,
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 -- Tabla de pagos
 CREATE TABLE pagos (
     id SERIAL PRIMARY KEY,
@@ -75,21 +67,12 @@ CREATE TABLE productos (
 );
 
 -- Insertar usuario admin por defecto (password: 1234)
--- password hash: $2a$10$rQZQZQZQZQZQZQZQZQZQZ.QQZQZQZQZQZQZQZQZQZQZQZQZQZQZQZQZ
 -- Para usar: password = '1234'
 INSERT INTO usuarios (email, password, nombre, telefono, rol)
 VALUES ('admin@cefor.com', '$2a$10$X7K7K7K7K7K7K7K7K7K7KeO0K7K7K7K7K7K7K7K7K7K7K7K7K7K', 'Administrador', '+1234567890', 'admin');
 
--- Insertar códigos de ejemplo
-INSERT INTO codigos_registro (codigo, usado) VALUES 
-    ('FAMILIA2024', false),
-    ('CEFOR001', false),
-    ('CEFOR002', false),
-    ('CEFOR003', false),
-    ('CEFOR004', false);
-
 -- Insertar familias de ejemplo
-INSERT INTO familias (nombre_jugador) VALUES 
+INSERT INTO familias (nombre_jugador) VALUES
     ('Juan Pérez'),
     ('Carlos García'),
     ('Miguel López'),
@@ -97,35 +80,35 @@ INSERT INTO familias (nombre_jugador) VALUES
     ('Antonio Rodríguez');
 
 -- Insertar pagos de ejemplo
-INSERT INTO pagos (jugador_id, fecha, monto, concepto, metodo_pago) VALUES 
+INSERT INTO pagos (jugador_id, fecha, monto, concepto, metodo_pago) VALUES
     (1, '2026-03-01', 50.00, 'Mensualidad', 'Transferencia'),
     (2, '2026-03-02', 35.00, 'Uniforme', 'Efectivo'),
     (1, '2026-02-15', 50.00, 'Mensualidad', 'Bizum'),
     (3, '2026-02-20', 25.00, 'Torneo', 'Tarjeta');
 
 -- Insertar partidos de ejemplo
-INSERT INTO partidos (rival, fecha, hora, lugar, estado) VALUES 
+INSERT INTO partidos (rival, fecha, hora, lugar, estado) VALUES
     ('Real Madrid', '2026-03-08', '10:00', 'Campo CEFOR', 'pendiente'),
     ('FC Barcelona', '2026-03-15', '11:00', 'Campo Barcelona', 'pendiente'),
     ('Atlético Madrid', '2026-03-22', '09:30', 'Campo Vicente Calderón', 'pendiente'),
     ('Sevilla FC', '2026-03-29', '10:30', 'Campo CEFOR', 'pendiente');
 
 -- Insertar resultados
-INSERT INTO partidos (rival, fecha, hora, lugar, estado, resultado_local, resultado_visitante) VALUES 
+INSERT INTO partidos (rival, fecha, hora, lugar, estado, resultado_local, resultado_visitante) VALUES
     ('Atlético Madrid', '2026-03-01', '10:00', 'Campo CEFOR', 'jugado', 3, 1),
     ('Sevilla FC', '2026-02-22', '11:00', 'Campo Sevilla', 'jugado', 2, 2),
     ('Valencia CF', '2026-02-15', '10:00', 'Campo CEFOR', 'jugado', 1, 0),
     ('Villarreal', '2026-02-08', '09:30', 'Campo Villarreal', 'jugado', 4, 2);
 
 -- Insertar avisos de ejemplo
-INSERT INTO avisos (titulo, descripcion, publicado_por) VALUES 
+INSERT INTO avisos (titulo, descripcion, publicado_por) VALUES
     ('Torneo Primavera 2026', 'Inscripciones abiertas para el torneo de primavera. Fecha límite: 15 de marzo.', 1),
     ('Uniformes Disponibles', 'Nuevos uniformes disponibles en la tienda. Consulta tallas en secretaría.', 1),
     ('Partido contra Real Madrid', 'Recordatorio del partido este domingo. Hora de encuentro: 9:30.', 1),
     ('Cambio de Horario', 'A partir de abril, los entrenamientos serán de 17:00 a 18:30.', 1);
 
 -- Insertar productos de ejemplo
-INSERT INTO productos (nombre, descripcion, precio, categoria) VALUES 
+INSERT INTO productos (nombre, descripcion, precio, categoria) VALUES
     ('Sudadera CEFOR', 'Sudadera con capucha oficial', 20.00, 'Uniformes'),
     ('Pantalón Deportivo', 'Pantalón oficial CEFOR', 18.00, 'Uniformes'),
     ('Chubasquero', 'Impermeable oficial', 25.00, 'Uniformes'),

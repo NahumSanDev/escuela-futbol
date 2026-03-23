@@ -1,12 +1,14 @@
-const API_URL = import.meta.env.VITE_API_URL || 'https://escuela-futbol-production.up.railway.app/api';
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://escuela-futbol-production.up.railway.app/api";
 
 async function fetchAPI(endpoint, options = {}) {
-  const token = localStorage.getItem('cefor_token');
-  
+  const token = localStorage.getItem("cefor_token");
+
   const config = {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...(token && { Authorization: `Bearer ${token}` }),
       ...options.headers,
     },
@@ -16,63 +18,64 @@ async function fetchAPI(endpoint, options = {}) {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error || 'Error en la solicitud');
+    throw new Error(data.error || "Error en la solicitud");
   }
 
   return data;
 }
 
 export const authService = {
-  login: (email, password) => 
-    fetchAPI('/auth/login', {
-      method: 'POST',
+  login: (email, password) =>
+    fetchAPI("/auth/login", {
+      method: "POST",
       body: JSON.stringify({ email, password }),
     }),
-  
-  register: (userData) => 
-    fetchAPI('/auth/register', {
-      method: 'POST',
+
+  register: (userData) =>
+    fetchAPI("/auth/register", {
+      method: "POST",
       body: JSON.stringify(userData),
     }),
-  
-  me: () => fetchAPI('/auth/me'),
+
+  me: () => fetchAPI("/auth/me"),
 };
 
 export const pagosService = {
-  getAll: () => fetchAPI('/pagos'),
-  create: (data) => fetchAPI('/pagos', { method: 'POST', body: JSON.stringify(data) }),
-  delete: (id) => fetchAPI(`/pagos/${id}`, { method: 'DELETE' }),
-  exportExcel: () => fetchAPI('/pagos/export'),
+  getAll: () => fetchAPI("/pagos"),
+  create: (data) =>
+    fetchAPI("/pagos", { method: "POST", body: JSON.stringify(data) }),
+  delete: (id) => fetchAPI(`/pagos/${id}`, { method: "DELETE" }),
+  exportExcel: () => fetchAPI("/pagos/export"),
 };
 
 export const partidosService = {
-  getAll: () => fetchAPI('/partidos'),
-  getProximos: () => fetchAPI('/partidos?estado=pendiente'),
-  getResultados: () => fetchAPI('/partidos?estado=jugado'),
-  create: (data) => fetchAPI('/partidos', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id, data) => fetchAPI(`/partidos/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  getAll: () => fetchAPI("/partidos"),
+  getProximos: () => fetchAPI("/partidos?estado=pendiente"),
+  getResultados: () => fetchAPI("/partidos?estado=jugado"),
+  create: (data) =>
+    fetchAPI("/partidos", { method: "POST", body: JSON.stringify(data) }),
+  update: (id, data) =>
+    fetchAPI(`/partidos/${id}`, { method: "PUT", body: JSON.stringify(data) }),
 };
 
 export const avisosService = {
-  getAll: () => fetchAPI('/avisos'),
-  create: (data) => fetchAPI('/avisos', { method: 'POST', body: JSON.stringify(data) }),
-  delete: (id) => fetchAPI(`/avisos/${id}`, { method: 'DELETE' }),
+  getAll: () => fetchAPI("/avisos"),
+  create: (data) =>
+    fetchAPI("/avisos", { method: "POST", body: JSON.stringify(data) }),
+  delete: (id) => fetchAPI(`/avisos/${id}`, { method: "DELETE" }),
 };
 
 export const productosService = {
-  getAll: () => fetchAPI('/productos'),
-  create: (data) => fetchAPI('/productos', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id, data) => fetchAPI(`/productos/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id) => fetchAPI(`/productos/${id}`, { method: 'DELETE' }),
-};
-
-export const codigosService = {
-  getAll: () => fetchAPI('/codigos'),
-  generate: () => fetchAPI('/codigos', { method: 'POST' }),
+  getAll: () => fetchAPI("/productos"),
+  create: (data) =>
+    fetchAPI("/productos", { method: "POST", body: JSON.stringify(data) }),
+  update: (id, data) =>
+    fetchAPI(`/productos/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  delete: (id) => fetchAPI(`/productos/${id}`, { method: "DELETE" }),
 };
 
 export const familiasService = {
-  getAll: () => fetchAPI('/familias'),
+  getAll: () => fetchAPI("/familias"),
 };
 
 export default API_URL;

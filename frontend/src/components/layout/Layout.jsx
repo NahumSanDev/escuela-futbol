@@ -1,7 +1,17 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { FiHome, FiDollarSign, FiCalendar, FiBell, FiShoppingBag, FiUser, FiLogOut, FiMenu, FiX } from 'react-icons/fi';
-import { useState } from 'react';
+import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import {
+  FiHome,
+  FiDollarSign,
+  FiCalendar,
+  FiBell,
+  FiShoppingBag,
+  FiUser,
+  FiLogOut,
+  FiMenu,
+  FiX,
+} from "react-icons/fi";
+import { useState } from "react";
 
 export default function Layout() {
   const { user, logout, isAdmin } = useAuth();
@@ -10,19 +20,18 @@ export default function Layout() {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate("/login");
   };
 
   const navItems = [
-    { to: '/', icon: FiHome, label: 'Inicio', exact: true },
-    ...(isAdmin ? [{ to: '/pagos', icon: FiDollarSign, label: 'Pagos' }] : []),
-    { to: '/partidos', icon: FiCalendar, label: 'Partidos' },
-    { to: '/calendario', icon: FiCalendar, label: 'Calendario' },
-    { to: '/resultados', icon: FiCalendar, label: 'Resultados' },
-    { to: '/avisos', icon: FiBell, label: 'Avisos' },
-    { to: '/market', icon: FiShoppingBag, label: 'Market' },
-    { to: '/perfil', icon: FiUser, label: 'Perfil' },
-    ...(isAdmin ? [{ to: '/codigos', icon: FiUser, label: 'Códigos' }] : []),
+    { to: "/", icon: FiHome, label: "Inicio", exact: true },
+    ...(isAdmin ? [{ to: "/pagos", icon: FiDollarSign, label: "Pagos" }] : []),
+    { to: "/partidos", icon: FiCalendar, label: "Partidos" },
+    { to: "/calendario", icon: FiCalendar, label: "Calendario" },
+    { to: "/resultados", icon: FiCalendar, label: "Resultados" },
+    { to: "/avisos", icon: FiBell, label: "Avisos" },
+    { to: "/market", icon: FiShoppingBag, label: "Market" },
+    { to: "/perfil", icon: FiUser, label: "Perfil" },
   ];
 
   return (
@@ -33,7 +42,7 @@ export default function Layout() {
             <div className="flex items-center space-x-2">
               <span className="text-2xl font-bold">CEFOR</span>
             </div>
-            
+
             <div className="hidden md:flex items-center space-x-4">
               {navItems.map((item) => (
                 <NavLink
@@ -42,7 +51,7 @@ export default function Layout() {
                   end={item.exact}
                   className={({ isActive }) =>
                     `flex items-center space-x-1 px-3 py-2 rounded-md transition-colors ${
-                      isActive ? 'bg-white/20' : 'hover:bg-white/10'
+                      isActive ? "bg-white/20" : "hover:bg-white/10"
                     }`
                   }
                 >
@@ -78,7 +87,7 @@ export default function Layout() {
                 onClick={() => setMobileMenuOpen(false)}
                 className={({ isActive }) =>
                   `flex items-center space-x-2 px-4 py-3 ${
-                    isActive ? 'bg-white/20' : 'hover:bg-white/10'
+                    isActive ? "bg-white/20" : "hover:bg-white/10"
                   }`
                 }
               >

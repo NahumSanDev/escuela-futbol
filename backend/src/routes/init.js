@@ -1,9 +1,9 @@
-import express from 'express';
-import { query } from '../config/db.js';
+import express from "express";
+import { query } from "../config/db.js";
 
 const router = express.Router();
 
-router.post('/init', async (req, res) => {
+router.post("/init", async (req, res) => {
   try {
     // Tabla usuarios
     await query(`
@@ -26,16 +26,6 @@ router.post('/init', async (req, res) => {
         usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
         nombre_jugador VARCHAR(255) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Tabla codigos_registro
-    await query(`
-      CREATE TABLE IF NOT EXISTS codigos_registro (
-        id SERIAL PRIMARY KEY,
-        codigo VARCHAR(50) UNIQUE NOT NULL,
-        usado BOOLEAN DEFAULT false,
-        fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
@@ -95,68 +85,100 @@ router.post('/init', async (req, res) => {
 
     // Insertar admin si no existe (password: 1234)
     const adminCheck = await query(
-      "SELECT id FROM usuarios WHERE email = 'admin@cefor.com'"
+      "SELECT id FROM usuarios WHERE email = 'admin@cefor.com'",
     );
 
     if (adminCheck.rows.length === 0) {
-      const bcrypt = await import('bcryptjs');
-      const hashedPassword = await bcrypt.default.hash('1234', 10);
-      
+      const bcrypt = await import("bcryptjs");
+      const hashedPassword = await bcrypt.default.hash("1234", 10);
+
       await query(
         "INSERT INTO usuarios (email, password, nombre, telefono, rol) VALUES ($1, $2, $3, $4, $5)",
-        ['admin@cefor.com', hashedPassword, 'Administrador', '+1234567890', 'admin']
+        [
+          "admin@cefor.com",
+          hashedPassword,
+          "Administrador",
+          "+1234567890",
+          "admin",
+        ],
       );
-    }
-
-    // Insertar códigos de ejemplo
-    const codigosCheck = await query("SELECT COUNT(*) FROM codigos_registro");
-    if (parseInt(codigosCheck.rows[0].count) === 0) {
-      const codigos = ['FAMILIA2024', 'CEFOR001', 'CEFOR002', 'CEFOR003', 'CEFOR004'];
-      for (const codigo of codigos) {
-        await query("INSERT INTO codigos_registro (codigo) VALUES ($1)", [codigo]);
-      }
     }
 
     // Insertar familias de ejemplo
     const familiasCheck = await query("SELECT COUNT(*) FROM familias");
     if (parseInt(familiasCheck.rows[0].count) === 0) {
-      const jugadores = ['Juan Pérez', 'Carlos García', 'Miguel López', 'Pedro Martínez', 'Antonio Rodríguez'];
+      const jugadores = [
+        "Juan Pérez",
+        "Carlos García",
+        "Miguel López",
+        "Pedro Martínez",
+        "Antonio Rodríguez",
+      ];
       for (const nombre of jugadores) {
-        await query("INSERT INTO familias (nombre_jugador) VALUES ($1)", [nombre]);
+        await query("INSERT INTO familias (nombre_jugador) VALUES ($1)", [
+          nombre,
+        ]);
       }
     }
 
     // Insertar partidos
     const partidosCheck = await query("SELECT COUNT(*) FROM partidos");
     if (parseInt(partidosCheck.rows[0].count) === 0) {
-      await query("INSERT INTO partidos (rival, fecha, hora, lugar, estado) VALUES ('Real Madrid', '2026-03-08', '10:00', 'Campo CEFOR', 'pendiente')");
-      await query("INSERT INTO partidos (rival, fecha, hora, lugar, estado) VALUES ('FC Barcelona', '2026-03-15', '11:00', 'Campo Barcelona', 'pendiente')");
-      await query("INSERT INTO partidos (rival, fecha, hora, lugar, estado, resultado_local, resultado_visitante) VALUES ('Atlético Madrid', '2026-03-01', '10:00', 'Campo CEFOR', 'jugado', 3, 1)");
-      await query("INSERT INTO partidos (rival, fecha, hora, lugar, estado, resultado_local, resultado_visitante) VALUES ('Sevilla FC', '2026-02-22', '11:00', 'Campo Sevilla', 'jugado', 2, 2)");
+      await query(
+        "INSERT INTO partidos (rival, fecha, hora, lugar, estado) VALUES ('Real Madrid', '2026-03-08', '10:00', 'Campo CEFOR', 'pendiente')",
+      );
+      await query(
+        "INSERT INTO partidos (rival, fecha, hora, lugar, estado) VALUES ('FC Barcelona', '2026-03-15', '11:00', 'Campo Barcelona', 'pendiente')",
+      );
+      await query(
+        "INSERT INTO partidos (rival, fecha, hora, lugar, estado, resultado_local, resultado_visitante) VALUES ('Atlético Madrid', '2026-03-01', '10:00', 'Campo CEFOR', 'jugado', 3, 1)",
+      );
+      await query(
+        "INSERT INTO partidos (rival, fecha, hora, lugar, estado, resultado_local, resultado_visitante) VALUES ('Sevilla FC', '2026-02-22', '11:00', 'Campo Sevilla', 'jugado', 2, 2)",
+      );
     }
 
     // Insertar avisos
     const avisosCheck = await query("SELECT COUNT(*) FROM avisos");
     if (parseInt(avisosCheck.rows[0].count) === 0) {
-      await query("INSERT INTO avisos (titulo, descripcion, publicado_por) VALUES ('Torneo Primavera 2026', 'Inscripciones abiertas para el torneo de primavera. Fecha límite: 15 de marzo.', 1)");
-      await query("INSERT INTO avisos (titulo, descripcion, publicado_por) VALUES ('Uniformes Disponibles', 'Nuevos uniformes disponibles en la tienda.', 1)");
+      await query(
+        "INSERT INTO avisos (titulo, descripcion, publicado_por) VALUES ('Torneo Primavera 2026', 'Inscripciones abiertas para el torneo de primavera. Fecha límite: 15 de marzo.', 1)",
+      );
+      await query(
+        "INSERT INTO avisos (titulo, descripcion, publicado_por) VALUES ('Uniformes Disponibles', 'Nuevos uniformes disponibles en la tienda.', 1)",
+      );
     }
 
     // Insertar productos
     const productosCheck = await query("SELECT COUNT(*) FROM productos");
     if (parseInt(productosCheck.rows[0].count) === 0) {
-      await query("INSERT INTO productos (nombre, descripcion, precio, categoria) VALUES ('Sudadera CEFOR', 'Sudadera con capucha oficial', 20.00, 'Uniformes')");
-      await query("INSERT INTO productos (nombre, descripcion, precio, categoria) VALUES ('Pantalón Deportivo', 'Pantalón oficial CEFOR', 18.00, 'Uniformes')");
-      await query("INSERT INTO productos (nombre, descripcion, precio, categoria) VALUES ('Chubasquero', 'Impermeable oficial', 25.00, 'Uniformes')");
-      await query("INSERT INTO productos (nombre, descripcion, precio, categoria) VALUES ('Equipación Júnior', 'Camiseta + shorts (tallas 8-14)', 35.00, 'Equipaciones')");
-      await query("INSERT INTO productos (nombre, descripcion, precio, categoria) VALUES ('Balón Match', 'Balón oficial de partido', 25.00, 'Balones')");
-      await query("INSERT INTO productos (nombre, descripcion, precio, categoria) VALUES ('Calcetines', 'Calcetines oficiales', 8.00, 'Complementos')");
+      await query(
+        "INSERT INTO productos (nombre, descripcion, precio, categoria) VALUES ('Sudadera CEFOR', 'Sudadera con capucha oficial', 20.00, 'Uniformes')",
+      );
+      await query(
+        "INSERT INTO productos (nombre, descripcion, precio, categoria) VALUES ('Pantalón Deportivo', 'Pantalón oficial CEFOR', 18.00, 'Uniformes')",
+      );
+      await query(
+        "INSERT INTO productos (nombre, descripcion, precio, categoria) VALUES ('Chubasquero', 'Impermeable oficial', 25.00, 'Uniformes')",
+      );
+      await query(
+        "INSERT INTO productos (nombre, descripcion, precio, categoria) VALUES ('Equipación Júnior', 'Camiseta + shorts (tallas 8-14)', 35.00, 'Equipaciones')",
+      );
+      await query(
+        "INSERT INTO productos (nombre, descripcion, precio, categoria) VALUES ('Balón Match', 'Balón oficial de partido', 25.00, 'Balones')",
+      );
+      await query(
+        "INSERT INTO productos (nombre, descripcion, precio, categoria) VALUES ('Calcetines', 'Calcetines oficiales', 8.00, 'Complementos')",
+      );
     }
 
-    res.json({ message: 'Base de datos inicializada correctamente' });
+    res.json({ message: "Base de datos inicializada correctamente" });
   } catch (err) {
-    console.error('Error completo:', err);
-    res.status(500).json({ error: 'Error al inicializar la base de datos', details: err.message });
+    console.error("Error completo:", err);
+    res.status(500).json({
+      error: "Error al inicializar la base de datos",
+      details: err.message,
+    });
   }
 });
 

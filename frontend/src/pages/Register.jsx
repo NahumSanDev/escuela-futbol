@@ -1,40 +1,42 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { authService } from '../services/api';
-import { FiUser, FiLock, FiPhone, FiMail } from 'react-icons/fi';
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { authService } from "../services/api";
+import { FiUser, FiLock, FiPhone, FiMail, FiInfo } from "react-icons/fi";
 
 export default function Register() {
-  const [codigo, setCodigo] = useState('');
-  const [nombrePadre, setNombrePadre] = useState('');
-  const [nombreJugador, setNombreJugador] = useState('');
-  const [telefono, setTelefono] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [nombrePadre, setNombrePadre] = useState("");
+  const [nombreJugador, setNombreJugador] = useState("");
+  const [telefono, setTelefono] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  const currentYear = new Date().getFullYear();
+  const codigoRegistro = `CEFOR${currentYear}`;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
       const data = await authService.register({
-        codigo,
-        nombre: nombrePadre,
+        codigo: codigoRegistro,
+        nombre_padre: nombrePadre,
         nombre_jugador: nombreJugador,
         telefono,
         email,
-        password
+        password,
       });
-      localStorage.setItem('cefor_token', data.token);
+      localStorage.setItem("cefor_token", data.token);
       login(data.user);
-      navigate('/');
+      navigate("/");
     } catch (err) {
-      setError(err.message || 'Error al registrar');
+      setError(err.message || "Error al registrar");
     } finally {
       setLoading(false);
     }
@@ -55,20 +57,25 @@ export default function Register() {
             </div>
           )}
 
-          <div>
-            <label className="block text-gray-700 mb-1">Código de Registro</label>
-            <input
-              type="text"
-              value={codigo}
-              onChange={(e) => setCodigo(e.target.value.toUpperCase())}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A651] focus:border-transparent outline-none"
-              placeholder="Ingresa el código proporcionado"
-              required
-            />
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+            <FiInfo className="text-blue-600 flex-shrink-0 mt-0.5" size={20} />
+            <div>
+              <p className="text-sm font-medium text-blue-900">
+                Código de Registro
+              </p>
+              <p className="text-2xl font-bold text-blue-700 mt-1">
+                {codigoRegistro}
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                Este código se actualiza automáticamente cada año
+              </p>
+            </div>
           </div>
 
           <div>
-            <label className="block text-gray-700 mb-1">Nombre del Padre/Tutor</label>
+            <label className="block text-gray-700 mb-1">
+              Nombre del Padre/Tutor
+            </label>
             <div className="relative">
               <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
@@ -83,7 +90,9 @@ export default function Register() {
           </div>
 
           <div>
-            <label className="block text-gray-700 mb-1">Nombre del Jugador</label>
+            <label className="block text-gray-700 mb-1">
+              Nombre del Jugador
+            </label>
             <input
               type="text"
               value={nombreJugador}
@@ -125,7 +134,9 @@ export default function Register() {
           </div>
 
           <div>
-            <label className="block text-gray-700 mb-1">Password (4-6 dígitos)</label>
+            <label className="block text-gray-700 mb-1">
+              Password (4-6 dígitos)
+            </label>
             <div className="relative">
               <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
@@ -146,7 +157,7 @@ export default function Register() {
             disabled={loading}
             className="w-full bg-[#00A651] text-white py-3 rounded-lg font-semibold hover:bg-[#008f45] transition-colors disabled:opacity-50"
           >
-            {loading ? 'Registrando...' : 'Registrarse'}
+            {loading ? "Registrando..." : "Registrarse"}
           </button>
         </form>
 
