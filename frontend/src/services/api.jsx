@@ -56,6 +56,7 @@ export const partidosService = {
     fetchAPI("/partidos", { method: "POST", body: JSON.stringify(data) }),
   update: (id, data) =>
     fetchAPI(`/partidos/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  delete: (id) => fetchAPI(`/partidos/${id}`, { method: "DELETE" }),
 };
 
 export const avisosService = {

@@ -1,7 +1,14 @@
-import { useState, useEffect } from 'react';
-import { FiCalendar, FiMapPin, FiClock, FiPlus, FiX } from 'react-icons/fi';
-import { partidosService } from '../../services/api';
-import { useAuth } from '../../context/AuthContext';
+import { useState, useEffect } from "react";
+import {
+  FiCalendar,
+  FiMapPin,
+  FiClock,
+  FiPlus,
+  FiX,
+  FiTrash2,
+} from "react-icons/fi";
+import { partidosService } from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Partidos() {
   const [partidos, setPartidos] = useState([]);
@@ -9,11 +16,11 @@ export default function Partidos() {
   const { isAdmin } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [nuevoPartido, setNuevoPartido] = useState({
-    rival: '',
-    fecha: '',
-    hora: '',
-    lugar: '',
-    estado: 'pendiente'
+    rival: "",
+    fecha: "",
+    hora: "",
+    lugar: "",
+    estado: "pendiente",
   });
 
   useEffect(() => {
@@ -23,11 +30,21 @@ export default function Partidos() {
   const fetchData = async () => {
     try {
       const data = await partidosService.getAll();
-      setPartidos(data.filter(p => p.estado === 'pendiente'));
+      setPartidos(data.filter((p) => p.estado === "pendiente"));
     } catch (err) {
-      console.error('Error:', err);
+      console.error("Error:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm("¿Estás seguro de eliminar este partido?")) return;
+    try {
+      await partidosService.delete(id);
+      await fetchData();
+    } catch (err) {
+      alert("Error al eliminar partido");
     }
   };
 
@@ -37,9 +54,15 @@ export default function Partidos() {
       await partidosService.create(nuevoPartido);
       await fetchData();
       setShowModal(false);
-      setNuevoPartido({ rival: '', fecha: '', hora: '', lugar: '', estado: 'pendiente' });
+      setNuevoPartido({
+        rival: "",
+        fecha: "",
+        hora: "",
+        lugar: "",
+        estado: "pendiente",
+      });
     } catch (err) {
-      alert('Error al crear partido');
+      alert("Error al crear partido");
     }
   };
 
@@ -63,7 +86,10 @@ export default function Partidos() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {partidos.map((partido) => (
-            <div key={partido.id} className="bg-white rounded-xl shadow-md overflow-hidden">
+            <div
+              key={partido.id}
+              className="bg-white rounded-xl shadow-md overflow-hidden"
+            >
               <div className="bg-[#00A651] text-white p-4">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-lg">CEFOR</span>
@@ -84,10 +110,19 @@ export default function Partidos() {
                   <FiMapPin className="mr-2" />
                   <span>{partido.lugar}</span>
                 </div>
-                <div className="pt-2">
+                <div className="pt-2 flex items-center justify-between">
                   <span className="px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800">
                     Por jugar
                   </span>
+                  {isAdmin && (
+                    <button
+                      onClick={() => handleDelete(partido.id)}
+                      className="flex items-center text-red-600 hover:text-red-800 text-sm"
+                    >
+                      <FiTrash2 className="mr-1" size={16} />
+                      Eliminar
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -106,45 +141,63 @@ export default function Partidos() {
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Nuevo Partido</h2>
-              <button onClick={() => setShowModal(false)}><FiX /></button>
+              <button onClick={() => setShowModal(false)}>
+                <FiX />
+              </button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Rival</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Rival
+                </label>
                 <input
                   type="text"
                   value={nuevoPartido.rival}
-                  onChange={(e) => setNuevoPartido({ ...nuevoPartido, rival: e.target.value })}
+                  onChange={(e) =>
+                    setNuevoPartido({ ...nuevoPartido, rival: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Fecha
+                </label>
                 <input
                   type="date"
                   value={nuevoPartido.fecha}
-                  onChange={(e) => setNuevoPartido({ ...nuevoPartido, fecha: e.target.value })}
+                  onChange={(e) =>
+                    setNuevoPartido({ ...nuevoPartido, fecha: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Hora</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Hora
+                </label>
                 <input
                   type="time"
                   value={nuevoPartido.hora}
-                  onChange={(e) => setNuevoPartido({ ...nuevoPartido, hora: e.target.value })}
+                  onChange={(e) =>
+                    setNuevoPartido({ ...nuevoPartido, hora: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Lugar</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Lugar
+                </label>
                 <input
                   type="text"
                   value={nuevoPartido.lugar}
-                  onChange={(e) => setNuevoPartido({ ...nuevoPartido, lugar: e.target.value })}
+                  onChange={(e) =>
+                    setNuevoPartido({ ...nuevoPartido, lugar: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   required
                 />
