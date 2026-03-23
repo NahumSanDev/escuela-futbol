@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { authService } from "../services/api";
-import { FiUser, FiLock, FiPhone, FiMail, FiInfo } from "react-icons/fi";
+import { FiUser, FiLock, FiPhone, FiMail } from "react-icons/fi";
 
 export default function Register() {
   const [nombrePadre, setNombrePadre] = useState("");
@@ -10,6 +10,7 @@ export default function Register() {
   const [telefono, setTelefono] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [codigo, setCodigo] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -23,9 +24,18 @@ export default function Register() {
     setError("");
     setLoading(true);
 
+    // Validar que el código ingresado sea correcto
+    if (codigo.toUpperCase() !== codigoRegistro) {
+      setError(
+        `Código de registro inválido. El código correcto es: ${codigoRegistro}`,
+      );
+      setLoading(false);
+      return;
+    }
+
     try {
       const data = await authService.register({
-        codigo: codigoRegistro,
+        codigo: codigo.toUpperCase(),
         nombre_padre: nombrePadre,
         nombre_jugador: nombreJugador,
         telefono,
@@ -57,19 +67,26 @@ export default function Register() {
             </div>
           )}
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
-            <FiInfo className="text-blue-600 flex-shrink-0 mt-0.5" size={20} />
-            <div>
-              <p className="text-sm font-medium text-blue-900">
-                Código de Registro
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Código de Registro
+            </label>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-2">
+              <p className="text-xs text-blue-700">
+                Ingresa el código proporcionado por CEFOR:
               </p>
-              <p className="text-2xl font-bold text-blue-700 mt-1">
+              <p className="text-lg font-bold text-blue-800 mt-1">
                 {codigoRegistro}
               </p>
-              <p className="text-xs text-blue-600 mt-1">
-                Este código se actualiza automáticamente cada año
-              </p>
             </div>
+            <input
+              type="text"
+              value={codigo}
+              onChange={(e) => setCodigo(e.target.value.toUpperCase())}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A651] focus:border-transparent outline-none uppercase tracking-wider"
+              placeholder="Ej: CEFOR2026"
+              required
+            />
           </div>
 
           <div>
