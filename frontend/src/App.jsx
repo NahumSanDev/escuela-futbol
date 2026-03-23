@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Pagos from "./pages/contabilidad/Pagos";
+import Familias from "./pages/admin/Familias";
 import Partidos from "./pages/partidos/Partidos";
 import Resultados from "./pages/partidos/Resultados";
 import Calendario from "./pages/partidos/Calendario";
@@ -54,6 +55,14 @@ function Router() {
           element={
             <PrivateRoute requireAdmin>
               <Pagos />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="familias"
+          element={
+            <PrivateRoute requireAdmin>
+              <Familias />
             </PrivateRoute>
           }
         />

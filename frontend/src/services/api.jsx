@@ -84,6 +84,7 @@ export const productosService = {
 
 export const familiasService = {
   getAll: () => fetchAPI("/familias"),
+  delete: (id) => fetchAPI(`/familias/${id}`, { method: "DELETE" }),
 };
 
 export default API_URL;

@@ -68,25 +68,20 @@ export default function Register() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Código de Registro
             </label>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-2">
-              <p className="text-xs text-blue-700">
-                Ingresa el código proporcionado por CEFOR:
-              </p>
-              <p className="text-lg font-bold text-blue-800 mt-1">
-                {codigoRegistro}
-              </p>
-            </div>
             <input
               type="text"
               value={codigo}
               onChange={(e) => setCodigo(e.target.value.toUpperCase())}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A651] focus:border-transparent outline-none uppercase tracking-wider"
-              placeholder="Ej: CEFOR2026"
+              placeholder="Ingresa el código proporcionado por CEFOR"
               required
             />
+            <p className="text-xs text-gray-500 mt-1">
+              El admin te debe proporcionar este código
+            </p>
           </div>
 
           <div>

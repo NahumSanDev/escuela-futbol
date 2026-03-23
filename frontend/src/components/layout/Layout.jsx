@@ -26,6 +26,7 @@ export default function Layout() {
   const navItems = [
     { to: "/", icon: FiHome, label: "Inicio", exact: true },
     ...(isAdmin ? [{ to: "/pagos", icon: FiDollarSign, label: "Pagos" }] : []),
+    ...(isAdmin ? [{ to: "/familias", icon: FiUser, label: "Familias" }] : []),
     { to: "/partidos", icon: FiCalendar, label: "Partidos" },
     { to: "/calendario", icon: FiCalendar, label: "Calendario" },
     { to: "/resultados", icon: FiCalendar, label: "Resultados" },
