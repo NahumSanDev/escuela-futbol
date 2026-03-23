@@ -1,6 +1,6 @@
 export const formatCurrency = (amount) => {
-  // Formato europeo: $1.234,56 (punto para miles, coma para decimales)
-  const formatted = new Intl.NumberFormat("es-ES", {
+  // Formato americano: $1500.00 (punto para decimales, sin separador de miles)
+  const formatted = new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount);
