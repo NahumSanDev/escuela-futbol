@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { query } from "../config/db.js";
 import { authenticateToken, JWT_SECRET } from "../middleware/auth.js";
+import { sendResetEmail } from "../config/mailer.js";
 
 const router = express.Router();
 
@@ -119,9 +120,13 @@ router.post("/forgot-password", async (req, res) => {
   try {
     const { email } = req.body;
 
-    const result = await query("SELECT id, email FROM usuarios WHERE email = $1", [email]);
+    const result = await query(
+      "SELECT id, email, nombre FROM usuarios WHERE email = $1",
+      [email]
+    );
+
     if (result.rows.length === 0) {
-      return res.status(200).json({ message: "Si el email existe, recibirás instrucciones para recuperar tu contraseña" });
+      return res.json({ message: "Si el email existe, recibirás instrucciones para recuperar tu contraseña" });
     }
 
     const user = result.rows[0];
@@ -131,12 +136,12 @@ router.post("/forgot-password", async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    console.log(`[RESET] Token para ${email}: ${resetToken}`);
+    const frontendUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get("host")}`.replace(":3000", ":5173");
+    const resetLink = `${frontendUrl}/reset-password?token=${encodeURIComponent(resetToken)}`;
 
-    res.json({
-      message: "Si el email existe, recibirás instrucciones para recuperar tu contraseña",
-      resetToken,
-    });
+    await sendResetEmail(user.email, user.nombre, resetLink);
+
+    res.json({ message: "Si el email existe, recibirás instrucciones para recuperar tu contraseña" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error del servidor" });

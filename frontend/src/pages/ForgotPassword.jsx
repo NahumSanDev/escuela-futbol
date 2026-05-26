@@ -8,20 +8,15 @@ export default function ForgotPassword() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [token, setToken] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setMessage("");
-    setToken("");
     setLoading(true);
     try {
       const data = await authService.forgotPassword(email);
       setMessage(data.message);
-      if (data.resetToken) {
-        setToken(data.resetToken);
-      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -46,18 +41,6 @@ export default function ForgotPassword() {
           {message && (
             <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
               {message}
-            </div>
-          )}
-
-          {token && (
-            <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded text-sm break-all">
-              <p className="font-semibold mb-1">Token de recuperación (modo desarrollo):</p>
-              <p className="font-mono text-xs">{token}</p>
-              <p className="mt-2">
-                <Link to={`/reset-password?token=${encodeURIComponent(token)}`} className="text-blue-700 underline">
-                  Haz clic aquí para restablecer tu contraseña
-                </Link>
-              </p>
             </div>
           )}
 

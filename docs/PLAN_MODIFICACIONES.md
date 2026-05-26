@@ -19,7 +19,7 @@
 
 | # | Solicitud | Estado |
 |---|-----------|--------|
-| 3.1 | Recuperar password para padres | ✅ Completado |
+| 3.1 | Recuperar password para padres (con email) | ✅ Completado |
 
 ## 4. Calendario — Eventos y Actividades
 
