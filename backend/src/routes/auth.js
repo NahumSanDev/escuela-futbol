@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { query } from "../config/db.js";
 import { authenticateToken, JWT_SECRET } from "../middleware/auth.js";
 import { sendResetEmail } from "../config/mailer.js";
+import { storeOtp, verifyOtp, sendSmsOtp } from "../config/sms.js";
 
 const router = express.Router();
 
@@ -167,6 +168,64 @@ router.post("/reset-password", async (req, res) => {
     await query("UPDATE usuarios SET password = $1 WHERE id = $2", [hashedPassword, decoded.id]);
 
     res.json({ message: "Contraseña actualizada correctamente" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
+router.post("/send-otp", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const result = await query(
+      "SELECT id, email, telefono, nombre FROM usuarios WHERE email = $1",
+      [email]
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({ message: "Si el email existe, recibirás un código por SMS" });
+    }
+
+    const user = result.rows[0];
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    storeOtp(email, code);
+
+    if (user.telefono) {
+      await sendSmsOtp(user.telefono, code);
+    } else {
+      console.log(`[SMS] ${user.nombre} no tiene teléfono registrado. Código: ${code}`);
+    }
+
+    res.json({ message: "Si el email existe, recibirás un código por SMS" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
+router.post("/verify-otp", async (req, res) => {
+  try {
+    const { email, code } = req.body;
+
+    if (!verifyOtp(email, code)) {
+      return res.status(400).json({ error: "Código inválido o expirado" });
+    }
+
+    const result = await query("SELECT id FROM usuarios WHERE email = $1", [email]);
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: "Usuario no encontrado" });
+    }
+
+    const resetToken = jwt.sign(
+      { id: result.rows[0].id, type: "reset", otp: true },
+      JWT_SECRET,
+      { expiresIn: "10m" }
+    );
+
+    res.json({ resetToken });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error del servidor" });

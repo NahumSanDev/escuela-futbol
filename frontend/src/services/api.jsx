@@ -45,6 +45,18 @@ export const authService = {
       body: JSON.stringify({ email }),
     }),
 
+  sendOtp: (email) =>
+    fetchAPI("/auth/send-otp", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
+  verifyOtp: (email, code) =>
+    fetchAPI("/auth/verify-otp", {
+      method: "POST",
+      body: JSON.stringify({ email, code }),
+    }),
+
   resetPassword: (token, newPassword) =>
     fetchAPI("/auth/reset-password", {
       method: "POST",
