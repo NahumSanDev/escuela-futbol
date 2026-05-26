@@ -2,7 +2,7 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { query } from "../config/db.js";
-import { authenticateToken, JWT_SECRET } from "../middleware/auth.js";
+import { authenticateToken, requireAdmin, JWT_SECRET } from "../middleware/auth.js";
 import { sendResetEmail } from "../config/mailer.js";
 import { storeOtp, verifyOtp, sendSmsOtp } from "../config/sms.js";
 
