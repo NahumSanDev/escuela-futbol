@@ -4,7 +4,7 @@ import { pagosService, familiasService } from '../../services/api';
 import { formatCurrency } from '../../utils/formatters';
 import * as XLSX from 'xlsx';
 
-const CONCEPTOS = ['Mensualidad', 'Uniforme', 'Equipo', 'Torneo', 'Otro'];
+const CONCEPTOS = ['Semana', 'Arbitraje', 'Uniforme', 'Torneo', 'Vacaciones', 'Otro'];
 const METODOS = ['Efectivo', 'Transferencia', 'Tarjeta', 'Bizum'];
 
 export default function Pagos() {
@@ -23,6 +23,7 @@ export default function Pagos() {
     concepto: '',
     metodo_pago: '',
   });
+  const [otroConcepto, setOtroConcepto] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -74,10 +75,15 @@ export default function Pagos() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await pagosService.create(nuevoPago);
+      const pagoData = {
+        ...nuevoPago,
+        concepto: nuevoPago.concepto === 'Otro' ? otroConcepto || 'Otro' : nuevoPago.concepto,
+      };
+      await pagosService.create(pagoData);
       await fetchData();
       setShowModal(false);
       setNuevoPago({ jugador_id: '', fecha: '', monto: '', concepto: '', metodo_pago: '' });
+      setOtroConcepto('');
     } catch (err) {
       alert('Error al guardar pago');
     }
@@ -244,6 +250,19 @@ export default function Pagos() {
                   ))}
                 </select>
               </div>
+              {nuevoPago.concepto === 'Otro' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Especificar concepto</label>
+                  <input
+                    type="text"
+                    value={otroConcepto}
+                    onChange={(e) => setOtroConcepto(e.target.value)}
+                    placeholder="Escribe el concepto..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    required
+                  />
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Método de Pago</label>
                 <select

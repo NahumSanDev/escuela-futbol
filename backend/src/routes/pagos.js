@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.get('/', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { jugador_id, page = 1, limit = 10 } = req.query;
+    const { jugador_id, page = 1, limit } = req.query;
     const offset = (page - 1) * limit;
 
     let whereClause = '';
@@ -22,21 +22,26 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
       params
     );
 
-    const result = await query(
-      `SELECT p.*, f.nombre_jugador 
+    let queryText = `SELECT p.*, f.nombre_jugador 
        FROM pagos p 
        LEFT JOIN familias f ON p.jugador_id = f.id 
        ${whereClause}
-       ORDER BY p.fecha DESC 
-       LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
-      [...params, limit, offset]
-    );
+       ORDER BY p.fecha DESC`;
 
+    const queryParams = [...params];
+    if (limit) {
+      queryText += ` LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`;
+      queryParams.push(limit, offset);
+    }
+
+    const result = await query(queryText, queryParams);
+
+    const total = parseInt(countResult.rows[0].count);
     res.json({
       pagos: result.rows,
-      total: parseInt(countResult.rows[0].count),
+      total,
       pagina: parseInt(page),
-      totalPaginas: Math.ceil(countResult.rows[0].count / limit)
+      totalPaginas: limit ? Math.ceil(total / limit) : 1
     });
   } catch (err) {
     console.error(err);
