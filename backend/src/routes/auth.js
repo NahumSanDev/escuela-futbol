@@ -173,4 +173,22 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
+router.post("/admin-reset", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { usuario_id, newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 4) {
+      return res.status(400).json({ error: "La contraseña debe tener al menos 4 caracteres" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await query("UPDATE usuarios SET password = $1 WHERE id = $2", [hashedPassword, usuario_id]);
+
+    res.json({ message: "Contraseña actualizada correctamente" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
 export default router;

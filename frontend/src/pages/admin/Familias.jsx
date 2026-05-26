@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
-import { FiTrash2, FiUsers } from "react-icons/fi";
-import { familiasService } from "../../services/api";
+import { FiTrash2, FiUsers, FiKey } from "react-icons/fi";
+import { familiasService, adminService } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Familias() {
   const { isAdmin } = useAuth();
   const [familias, setFamilias] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [resetModal, setResetModal] = useState(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [resetMessage, setResetMessage] = useState("");
 
   useEffect(() => {
     if (isAdmin) {
@@ -22,6 +25,20 @@ export default function Familias() {
       console.error("Error:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!newPassword || newPassword.length < 4) {
+      alert("La contraseña debe tener al menos 4 caracteres");
+      return;
+    }
+    try {
+      await adminService.resetPassword(resetModal.usuario_id, newPassword);
+      setResetMessage(`Contraseña actualizada para ${resetModal.nombre_padre}`);
+      setTimeout(() => { setResetModal(null); setResetMessage(""); setNewPassword(""); }, 2000);
+    } catch (err) {
+      alert("Error al resetear contraseña");
     }
   };
 
@@ -119,16 +136,26 @@ export default function Familias() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <button
-                          onClick={() =>
-                            eliminarFamilia(familia.id, familia.nombre_jugador)
-                          }
-                          className="text-red-600 hover:text-red-900 flex items-center justify-end gap-1 ml-auto"
-                          title="Eliminar familia"
-                        >
-                          <FiTrash2 size={18} />
-                          <span className="text-sm">Eliminar</span>
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => { setResetModal(familia); setNewPassword(""); setResetMessage(""); }}
+                            className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
+                            title="Resetear contraseña"
+                          >
+                            <FiKey size={16} />
+                            <span className="text-sm">Reset Password</span>
+                          </button>
+                          <button
+                            onClick={() =>
+                              eliminarFamilia(familia.id, familia.nombre_jugador)
+                            }
+                            className="text-red-600 hover:text-red-900 flex items-center gap-1"
+                            title="Eliminar familia"
+                          >
+                            <FiTrash2 size={18} />
+                            <span className="text-sm">Eliminar</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -152,6 +179,50 @@ export default function Familias() {
           Compártelo solo con los padres que quieras registrar.
         </p>
       </div>
+
+      {resetModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-sm">
+            <h2 className="text-xl font-bold mb-2">Resetear Contraseña</h2>
+            <p className="text-gray-600 mb-4">
+              {resetModal.nombre_padre} — {resetModal.nombre_jugador}
+            </p>
+            {resetMessage ? (
+              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                {resetMessage}
+              </div>
+            ) : (
+              <>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nueva contraseña</label>
+                  <input
+                    type="text"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="Mínimo 4 caracteres"
+                    autoFocus
+                  />
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => { setResetModal(null); setNewPassword(""); }}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleResetPassword}
+                    className="flex-1 px-4 py-2 bg-[#00A651] text-white rounded-lg hover:bg-[#008f45]"
+                  >
+                    Guardar
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

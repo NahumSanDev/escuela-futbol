@@ -100,4 +100,12 @@ export const familiasService = {
   delete: (id) => fetchAPI(`/familias/${id}`, { method: "DELETE" }),
 };
 
+export const adminService = {
+  resetPassword: (usuarioId, newPassword) =>
+    fetchAPI("/auth/admin-reset", {
+      method: "POST",
+      body: JSON.stringify({ usuario_id: usuarioId, newPassword }),
+    }),
+};
+
 export default API_URL;
