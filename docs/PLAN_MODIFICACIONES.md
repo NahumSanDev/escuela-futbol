@@ -12,8 +12,8 @@
 
 | # | Solicitud | Estado |
 |---|-----------|--------|
-| 2.1 | Campo categoría: Sub 9, Sub 11, Sub 13 | ⏳ Pendiente |
-| 2.2 | Resultado en calendario: Ganado, Empate, Perdido, Por jugar | ⏳ Pendiente |
+| 2.1 | Campo categoría: Sub 9, Sub 11, Sub 13 | ✅ Completado |
+| 2.2 | Resultado en calendario + registro desde Partidos | ✅ Completado |
 
 ## 3. Registro/Login — Recuperación de Contraseña
 

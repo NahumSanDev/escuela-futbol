@@ -44,12 +44,12 @@ router.get('/', authenticateToken, async (req, res) => {
 
 router.post('/', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { rival, fecha, hora, lugar, estado } = req.body;
+    const { rival, fecha, hora, lugar, estado, categoria } = req.body;
 
     const result = await query(
-      `INSERT INTO partidos (rival, fecha, hora, lugar, estado) 
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [rival, fecha, hora, lugar, estado || 'pendiente']
+      `INSERT INTO partidos (rival, fecha, hora, lugar, estado, categoria) 
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [rival, fecha, hora, lugar, estado || 'pendiente', categoria || 'Sub 11']
     );
 
     res.status(201).json(result.rows[0]);
@@ -62,14 +62,14 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { rival, fecha, hora, lugar, estado, resultado_local, resultado_visitante } = req.body;
+    const { rival, fecha, hora, lugar, estado, resultado_local, resultado_visitante, categoria } = req.body;
 
     const result = await query(
       `UPDATE partidos 
        SET rival = $1, fecha = $2, hora = $3, lugar = $4, estado = $5, 
-           resultado_local = $6, resultado_visitante = $7
-       WHERE id = $8 RETURNING *`,
-      [rival, fecha, hora, lugar, estado, resultado_local, resultado_visitante, id]
+           resultado_local = $6, resultado_visitante = $7, categoria = $8
+       WHERE id = $9 RETURNING *`,
+      [rival, fecha, hora, lugar, estado, resultado_local, resultado_visitante, categoria, id]
     );
 
     res.json(result.rows[0]);

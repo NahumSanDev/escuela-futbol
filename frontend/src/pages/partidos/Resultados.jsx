@@ -9,6 +9,8 @@ export default function Resultados() {
   const { isAdmin } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [editando, setEditando] = useState(null);
+  const CATEGORIAS = ['Sub 9', 'Sub 11', 'Sub 13'];
+
   const [nuevoResultado, setNuevoResultado] = useState({
     rival: '',
     fecha: '',
@@ -16,7 +18,8 @@ export default function Resultados() {
     lugar: '',
     resultado_local: '',
     resultado_visitante: '',
-    estado: 'jugado'
+    estado: 'jugado',
+    categoria: 'Sub 11',
   });
 
   useEffect(() => {
@@ -42,7 +45,8 @@ export default function Resultados() {
       setShowModal(false);
       setNuevoResultado({
         rival: '', fecha: '', hora: '', lugar: '',
-        resultado_local: '', resultado_visitante: '', estado: 'jugado'
+        resultado_local: '', resultado_visitante: '', estado: 'jugado',
+        categoria: 'Sub 11',
       });
     } catch (err) {
       alert('Error al crear resultado');
@@ -58,7 +62,8 @@ export default function Resultados() {
       lugar: partido.lugar || '',
       resultado_local: partido.resultado_local,
       resultado_visitante: partido.resultado_visitante,
-      estado: 'jugado'
+      estado: 'jugado',
+      categoria: partido.categoria || 'Sub 11',
     });
     setShowModal(true);
   };
@@ -72,7 +77,8 @@ export default function Resultados() {
       setEditando(null);
       setNuevoResultado({
         rival: '', fecha: '', hora: '', lugar: '',
-        resultado_local: '', resultado_visitante: '', estado: 'jugado'
+        resultado_local: '', resultado_visitante: '', estado: 'jugado',
+        categoria: 'Sub 11',
       });
     } catch (err) {
       alert('Error al actualizar resultado');
@@ -84,7 +90,8 @@ export default function Resultados() {
     setEditando(null);
     setNuevoResultado({
       rival: '', fecha: '', hora: '', lugar: '',
-      resultado_local: '', resultado_visitante: '', estado: 'jugado'
+      resultado_local: '', resultado_visitante: '', estado: 'jugado',
+      categoria: 'Sub 11',
     });
   };
 
@@ -110,6 +117,9 @@ export default function Resultados() {
           {partidos.map((resultado) => (
             <div key={resultado.id} className="bg-white rounded-xl shadow-md overflow-hidden">
               <div className="bg-gradient-to-r from-[#00A651] to-green-400 text-white p-4">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs bg-white/20 px-2 py-0.5 rounded">{resultado.categoria || 'Sub 11'}</span>
+                </div>
                 <div className="flex items-center justify-between text-lg font-bold">
                   <span>CEFOR</span>
                   <span className="text-3xl">{resultado.resultado_local} - {resultado.resultado_visitante}</span>
@@ -202,6 +212,18 @@ export default function Resultados() {
                   onChange={(e) => setNuevoResultado({ ...nuevoResultado, lugar: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                <select
+                  value={nuevoResultado.categoria}
+                  onChange={(e) => setNuevoResultado({ ...nuevoResultado, categoria: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                >
+                  {CATEGORIAS.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
               </div>
               <div className="flex space-x-3 pt-2">
                 <button

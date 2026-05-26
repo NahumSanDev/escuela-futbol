@@ -129,7 +129,7 @@ export default function Calendario() {
                       <div
                         key={partido.id}
                         className={`text-xs p-1 rounded mt-1 truncate ${getPartidoColor(partido)}`}
-                        title={partido.estado === 'jugado' ? `${partido.resultado_local} - ${partido.resultado_visitante}` : 'Por jugar'}
+                        title={`${partido.categoria || 'Sub 11'} - ${partido.estado === 'jugado' ? `${partido.resultado_local} - ${partido.resultado_visitante}` : 'Por jugar'}`}
                       >
                         {partido.rival}
                       </div>
@@ -160,6 +160,7 @@ export default function Calendario() {
                 <div>
                   <span className="font-medium">vs {partido.rival}</span>
                   <span className="text-gray-500 ml-2">{partido.lugar}</span>
+                  <span className="text-xs bg-gray-100 text-gray-600 ml-2 px-1.5 py-0.5 rounded">{partido.categoria || 'Sub 11'}</span>
                 </div>
                 <span className="text-sm text-gray-600">{formatDate(partido.fecha)} {partido.hora}</span>
               </div>

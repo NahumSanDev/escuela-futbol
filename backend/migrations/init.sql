@@ -42,6 +42,7 @@ CREATE TABLE partidos (
     estado VARCHAR(20) DEFAULT 'pendiente' CHECK (estado IN ('pendiente', 'jugado', 'cancelado')),
     resultado_local INTEGER,
     resultado_visitante INTEGER,
+    categoria VARCHAR(20) DEFAULT 'Sub 11',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
