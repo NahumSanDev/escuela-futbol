@@ -115,4 +115,57 @@ router.get("/me", authenticateToken, async (req, res) => {
   }
 });
 
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const result = await query("SELECT id, email FROM usuarios WHERE email = $1", [email]);
+    if (result.rows.length === 0) {
+      return res.status(200).json({ message: "Si el email existe, recibirás instrucciones para recuperar tu contraseña" });
+    }
+
+    const user = result.rows[0];
+    const resetToken = jwt.sign(
+      { id: user.id, type: "reset" },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    console.log(`[RESET] Token para ${email}: ${resetToken}`);
+
+    res.json({
+      message: "Si el email existe, recibirás instrucciones para recuperar tu contraseña",
+      resetToken,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch {
+      return res.status(400).json({ error: "Token inválido o expirado" });
+    }
+
+    if (decoded.type !== "reset") {
+      return res.status(400).json({ error: "Token inválido" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await query("UPDATE usuarios SET password = $1 WHERE id = $2", [hashedPassword, decoded.id]);
+
+    res.json({ message: "Contraseña actualizada correctamente" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
 export default router;

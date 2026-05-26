@@ -19,7 +19,7 @@
 
 | # | Solicitud | Estado |
 |---|-----------|--------|
-| 3.1 | Recuperar password para padres | ⏳ Pendiente |
+| 3.1 | Recuperar password para padres | ✅ Completado |
 
 ## 4. Calendario — Eventos y Actividades
 

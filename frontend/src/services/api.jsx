@@ -38,6 +38,18 @@ export const authService = {
     }),
 
   me: () => fetchAPI("/auth/me"),
+
+  forgotPassword: (email) =>
+    fetchAPI("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
+  resetPassword: (token, newPassword) =>
+    fetchAPI("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, newPassword }),
+    }),
 };
 
 export const pagosService = {
