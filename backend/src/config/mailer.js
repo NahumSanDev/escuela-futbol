@@ -1,17 +1,23 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT) || 587,
+  secure: process.env.SMTP_SECURE === 'true',
+  auth: {
+    user: process.env.SMTP_USER || '',
+    pass: process.env.SMTP_PASS || '',
+  },
+});
 
 export async function sendResetEmail(email, nombre, resetLink) {
-  if (!process.env.RESEND_API_KEY) {
-    console.log(`[MAILER] RESEND_API_KEY no configurada. Enlace para ${email}: ${resetLink}`);
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.log(`[MAILER] SMTP no configurado. Enlace para ${email}: ${resetLink}`);
     return { simulated: true, resetLink };
   }
 
-  const from = process.env.RESEND_FROM || 'onboarding@resend.dev';
-
-  await resend.emails.send({
-    from,
+  await transporter.sendMail({
+    from: `"CEFOR Escuela de Fútbol" <${process.env.SMTP_USER}>`,
     to: email,
     subject: 'Recuperación de Contraseña - CEFOR',
     html: `
@@ -54,26 +60,4 @@ export async function sendResetEmail(email, nombre, resetLink) {
   });
 
   console.log(`[MAILER] Email enviado a ${email}`);
-}
-
-export async function sendTestEmail() {
-  if (!process.env.RESEND_API_KEY) {
-    console.log('[MAILER] RESEND_API_KEY no configurada');
-    return;
-  }
-
-  const from = process.env.RESEND_FROM || 'onboarding@resend.dev';
-
-  const { data, error } = await resend.emails.send({
-    from,
-    to: 'delivered@resend.dev',
-    subject: 'Test CEFOR',
-    html: '<p>Configuración de email funcionando</p>',
-  });
-
-  if (error) {
-    console.error('[MAILER] Error test:', error);
-  } else {
-    console.log('[MAILER] Test exitoso:', data);
-  }
 }
