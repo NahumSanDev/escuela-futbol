@@ -9,6 +9,8 @@ import productosRoutes from "./routes/productos.js";
 import familiasRoutes from "./routes/familias.js";
 import comentariosRoutes from "./routes/comentarios.js";
 import initRoutes from "./routes/init.js";
+import eventosRoutes from "./routes/eventos.js";
+import notificacionesRoutes from "./routes/notificaciones.js";
 
 dotenv.config();
 
@@ -26,6 +28,8 @@ app.use("/api/productos", productosRoutes);
 app.use("/api/familias", familiasRoutes);
 app.use("/api/comentarios", comentariosRoutes);
 app.use("/api/init", initRoutes);
+app.use("/api/eventos", eventosRoutes);
+app.use("/api/notificaciones", notificacionesRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "OK", message: "CEFOR API running" });

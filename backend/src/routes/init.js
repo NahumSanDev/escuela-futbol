@@ -83,6 +83,33 @@ router.post("/init", async (req, res) => {
       )
     `);
 
+    // Tabla eventos
+    await query(`
+      CREATE TABLE IF NOT EXISTS eventos (
+        id SERIAL PRIMARY KEY,
+        titulo VARCHAR(255) NOT NULL,
+        descripcion TEXT,
+        fecha DATE NOT NULL,
+        hora VARCHAR(10),
+        tipo VARCHAR(50) DEFAULT 'evento',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Tabla notificaciones
+    await query(`
+      CREATE TABLE IF NOT EXISTS notificaciones (
+        id SERIAL PRIMARY KEY,
+        titulo VARCHAR(255) NOT NULL,
+        mensaje TEXT NOT NULL,
+        tipo VARCHAR(50) DEFAULT 'general',
+        referencia_tipo VARCHAR(50),
+        referencia_id INTEGER,
+        leida BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     // Tabla comentarios
     await query(`
       CREATE TABLE IF NOT EXISTS comentarios (

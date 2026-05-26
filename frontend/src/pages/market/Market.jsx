@@ -4,7 +4,7 @@ import { productosService } from '../../services/api';
 import { formatCurrency } from '../../utils/formatters';
 import { useAuth } from '../../context/AuthContext';
 
-const CATEGORIAS = ['Todos', 'Uniformes', 'Equipaciones', 'Complementos', 'Balones', 'Bolsas'];
+const CATEGORIAS = ['Todos', 'Uniformes', 'Equipaciones', 'Complementos', 'Balones', 'Bolsas', 'Negocios', 'Bazar'];
 
 export default function Market() {
   const { isAdmin } = useAuth();
@@ -16,8 +16,11 @@ export default function Market() {
     nombre: '',
     descripcion: '',
     precio: '',
-    categoria: 'Uniformes'
+    categoria: 'Uniformes',
+    imagen_url: ''
   });
+  const [editProducto, setEditProducto] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -40,9 +43,21 @@ export default function Market() {
       await productosService.create(nuevoProducto);
       await fetchData();
       setShowModal(false);
-      setNuevoProducto({ nombre: '', descripcion: '', precio: '', categoria: 'Uniformes' });
+      setNuevoProducto({ nombre: '', descripcion: '', precio: '', categoria: 'Uniformes', imagen_url: '' });
     } catch (err) {
       alert('Error al crear producto');
+    }
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await productosService.update(editProducto.id, editProducto);
+      await fetchData();
+      setShowEditModal(false);
+      setEditProducto(null);
+    } catch (err) {
+      alert('Error al actualizar producto');
     }
   };
 
@@ -118,7 +133,7 @@ export default function Market() {
                   )}
                   {isAdmin && (
                     <div className="flex space-x-1">
-                      <button className="p-1 text-blue-600 hover:bg-blue-50 rounded">
+                      <button onClick={() => { setEditProducto(producto); setShowEditModal(true); }} className="p-1 text-blue-600 hover:bg-blue-50 rounded">
                         <FiEdit2 size={16} />
                       </button>
                       <button onClick={() => eliminarProducto(producto.id)} className="p-1 text-red-600 hover:bg-red-50 rounded">
@@ -178,6 +193,16 @@ export default function Market() {
                 />
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">URL de imagen</label>
+                <input
+                  type="url"
+                  value={nuevoProducto.imagen_url}
+                  onChange={(e) => setNuevoProducto({ ...nuevoProducto, imagen_url: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  placeholder="https://ejemplo.com/imagen.jpg"
+                />
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
                 <select
                   value={nuevoProducto.categoria}
@@ -202,6 +227,87 @@ export default function Market() {
                   className="flex-1 px-4 py-2 bg-[#00A651] text-white rounded-lg hover:bg-[#008f45]"
                 >
                   Guardar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+
+      {showEditModal && editProducto && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Editar Producto</h2>
+              <button onClick={() => { setShowEditModal(false); setEditProducto(null); }}><FiX /></button>
+            </div>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                <input
+                  type="text"
+                  value={editProducto.nombre}
+                  onChange={(e) => setEditProducto({ ...editProducto, nombre: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                <textarea
+                  value={editProducto.descripcion}
+                  onChange={(e) => setEditProducto({ ...editProducto, descripcion: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Precio ($)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editProducto.precio}
+                  onChange={(e) => setEditProducto({ ...editProducto, precio: parseFloat(e.target.value) })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">URL de imagen</label>
+                <input
+                  type="url"
+                  value={editProducto.imagen_url || ''}
+                  onChange={(e) => setEditProducto({ ...editProducto, imagen_url: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  placeholder="https://ejemplo.com/imagen.jpg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                <select
+                  value={editProducto.categoria}
+                  onChange={(e) => setEditProducto({ ...editProducto, categoria: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                >
+                  {CATEGORIAS.filter(c => c !== 'Todos').map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex space-x-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setShowEditModal(false); setEditProducto(null); }}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-[#00A651] text-white rounded-lg hover:bg-[#008f45]"
+                >
+                  Guardar Cambios
                 </button>
               </div>
             </form>

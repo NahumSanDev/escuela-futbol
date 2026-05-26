@@ -38,7 +38,7 @@
 
 | # | Solicitud | Estado |
 |---|-----------|--------|
-| 6.1 | Notificaciones a padres cuando hay actualizaciones | ⏳ Pendiente |
+| 6.1 | Notificaciones a padres (in-app: bell + dropdown, auto-creación al registrar eventos/partidos/productos) | ✅ Completado |
 
 ## 7. Preguntas del Cliente
 

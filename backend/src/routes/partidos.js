@@ -1,6 +1,7 @@
 import express from 'express';
 import { query } from '../config/db.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
+import { crearNotificacion } from './notificaciones.js';
 
 const router = express.Router();
 
@@ -52,6 +53,14 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
       [rival, fecha, hora, lugar, estado || 'pendiente', categoria || 'Sub 11']
     );
 
+    await crearNotificacion({
+      titulo: 'Nuevo partido',
+      mensaje: `Partido vs ${rival} (${categoria || 'Sub 11'}) agendado para el ${fecha}${hora ? ` a las ${hora}` : ''}`,
+      tipo: 'partido',
+      referencia_tipo: 'partido',
+      referencia_id: result.rows[0].id,
+    });
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -71,6 +80,17 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
        WHERE id = $9 RETURNING *`,
       [rival, fecha, hora, lugar, estado, resultado_local, resultado_visitante, categoria, id]
     );
+
+    if (estado === 'jugado' && result.rows[0]) {
+      const p = result.rows[0];
+      await crearNotificacion({
+        titulo: 'Resultado registrado',
+        mensaje: `Partido vs ${p.rival}: ${p.resultado_local} - ${p.resultado_visitante} (${p.categoria || 'Sub 11'})`,
+        tipo: 'resultado',
+        referencia_tipo: 'partido',
+        referencia_id: id,
+      });
+    }
 
     res.json(result.rows[0]);
   } catch (err) {

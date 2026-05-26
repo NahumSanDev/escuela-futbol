@@ -11,6 +11,7 @@ import Familias from "./pages/admin/Familias";
 import Partidos from "./pages/partidos/Partidos";
 import Resultados from "./pages/partidos/Resultados";
 import Calendario from "./pages/partidos/Calendario";
+import Eventos from "./pages/Eventos";
 import Avisos from "./pages/avisos/Avisos";
 import Market from "./pages/market/Market";
 import Perfil from "./pages/perfil/Perfil";
@@ -73,6 +74,7 @@ function Router() {
         <Route path="partidos" element={<Partidos />} />
         <Route path="resultados" element={<Resultados />} />
         <Route path="calendario" element={<Calendario />} />
+        <Route path="eventos" element={<Eventos />} />
         <Route path="avisos" element={<Avisos />} />
         <Route path="market" element={<Market />} />
         <Route path="perfil" element={<Perfil />} />

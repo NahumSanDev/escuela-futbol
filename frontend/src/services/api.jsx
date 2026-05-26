@@ -120,4 +120,19 @@ export const adminService = {
     }),
 };
 
+export const eventosService = {
+  getAll: () => fetchAPI("/eventos"),
+  create: (data) =>
+    fetchAPI("/eventos", { method: "POST", body: JSON.stringify(data) }),
+  update: (id, data) =>
+    fetchAPI(`/eventos/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  delete: (id) => fetchAPI(`/eventos/${id}`, { method: "DELETE" }),
+};
+
+export const notificacionesService = {
+  getAll: () => fetchAPI("/notificaciones"),
+  marcarLeida: (id) => fetchAPI(`/notificaciones/${id}/leer`, { method: "PUT" }),
+  marcarTodasLeidas: () => fetchAPI("/notificaciones/leer-todas", { method: "PUT" }),
+};
+
 export default API_URL;

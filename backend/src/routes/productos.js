@@ -1,6 +1,7 @@
 import express from 'express';
 import { query } from '../config/db.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
+import { crearNotificacion } from './notificaciones.js';
 
 const router = express.Router();
 
@@ -46,6 +47,14 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
        VALUES ($1, $2, $3, $4, $5) RETURNING *`,
       [nombre, descripcion, precio, categoria, imagen_url]
     );
+
+    await crearNotificacion({
+      titulo: 'Nuevo producto en Fénix Market',
+      mensaje: `Se agregó "${nombre}" en la categoría ${categoria} con precio $${precio}`,
+      tipo: 'producto',
+      referencia_tipo: 'producto',
+      referencia_id: result.rows[0].id,
+    });
 
     res.status(201).json(result.rows[0]);
   } catch (err) {

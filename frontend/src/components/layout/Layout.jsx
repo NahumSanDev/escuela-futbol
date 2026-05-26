@@ -6,12 +6,14 @@ import {
   FiCalendar,
   FiBell,
   FiShoppingBag,
+  FiStar,
   FiUser,
   FiLogOut,
   FiMenu,
   FiX,
 } from "react-icons/fi";
 import { useState } from "react";
+import NotificationBell from "./NotificationBell";
 
 export default function Layout() {
   const { user, logout, isAdmin } = useAuth();
@@ -29,6 +31,7 @@ export default function Layout() {
     ...(isAdmin ? [{ to: "/familias", icon: FiUser, label: "Familias" }] : []),
     { to: "/partidos", icon: FiCalendar, label: "Partidos" },
     { to: "/calendario", icon: FiCalendar, label: "Calendario" },
+    { to: "/eventos", icon: FiStar, label: "Eventos" },
     { to: "/resultados", icon: FiCalendar, label: "Resultados" },
     { to: "/avisos", icon: FiBell, label: "Avisos" },
     { to: "/market", icon: FiShoppingBag, label: "Market" },
@@ -60,6 +63,7 @@ export default function Layout() {
                   <span>{item.label}</span>
                 </NavLink>
               ))}
+              <NotificationBell />
               <button
                 onClick={handleLogout}
                 className="flex items-center space-x-1 px-3 py-2 rounded-md hover:bg-white/10 transition-colors"
@@ -80,6 +84,9 @@ export default function Layout() {
 
         {mobileMenuOpen && (
           <div className="md:hidden pb-4">
+            <div className="px-4 py-2">
+              <NotificationBell />
+            </div>
             {navItems.map((item) => (
               <NavLink
                 key={item.to}

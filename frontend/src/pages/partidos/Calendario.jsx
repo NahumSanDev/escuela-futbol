@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
-import { FiChevronLeft, FiChevronRight, FiCalendar } from 'react-icons/fi';
-import { partidosService } from '../../services/api';
+import { FiChevronLeft, FiChevronRight, FiCalendar, FiStar } from 'react-icons/fi';
+import { partidosService, eventosService } from '../../services/api';
 import { formatDate } from '../../utils/formatters';
+import { Link } from 'react-router-dom';
 
 const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 export default function Calendario() {
   const [partidos, setPartidos] = useState([]);
+  const [eventos, setEventos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -17,8 +19,12 @@ export default function Calendario() {
 
   const fetchData = async () => {
     try {
-      const data = await partidosService.getAll();
-      setPartidos(data);
+      const [partidosData, eventosData] = await Promise.all([
+        partidosService.getAll(),
+        eventosService.getAll(),
+      ]);
+      setPartidos(partidosData);
+      setEventos(eventosData);
     } catch (err) {
       console.error('Error:', err);
     } finally {
@@ -50,14 +56,21 @@ export default function Calendario() {
     return days;
   };
 
-  const getPartidosForDate = (date) => {
+  const getItemsForDate = (date) => {
     if (!date) return [];
     const dateStr = date.toISOString().split('T')[0];
-    return partidos.filter(p => {
+
+    const partidosDia = partidos.filter(p => {
       if (!p.fecha) return false;
-      const partidoFecha = p.fecha.toString().split('T')[0];
-      return partidoFecha === dateStr;
-    });
+      return p.fecha.toString().split('T')[0] === dateStr;
+    }).map(p => ({ ...p, _type: 'partido' }));
+
+    const eventosDia = eventos.filter(e => {
+      if (!e.fecha) return false;
+      return e.fecha.toString().split('T')[0] === dateStr;
+    }).map(e => ({ ...e, _type: 'evento' }));
+
+    return [...partidosDia, ...eventosDia];
   };
 
   const prevMonth = () => {
@@ -70,70 +83,74 @@ export default function Calendario() {
 
   const days = getDaysInMonth(currentDate);
 
-  const getPartidoColor = (partido) => {
-    if (partido.estado !== 'jugado') {
-      return 'bg-gray-200 text-gray-600';
+  const getItemColor = (item) => {
+    if (item._type === 'partido') {
+      if (item.estado !== 'jugado') return 'bg-gray-200 text-gray-600';
+      if (item.resultado_local > item.resultado_visitante) return 'bg-green-500 text-white';
+      if (item.resultado_local < item.resultado_visitante) return 'bg-orange-500 text-white';
+      return 'bg-yellow-400 text-gray-800';
     }
-    if (partido.resultado_local > partido.resultado_visitante) {
-      return 'bg-green-500 text-white';
-    }
-    if (partido.resultado_local < partido.resultado_visitante) {
-      return 'bg-orange-500 text-white';
-    }
-    return 'bg-yellow-400 text-gray-800';
+    const colores = {
+      torneo: 'bg-purple-500 text-white',
+      cumpleaños: 'bg-pink-400 text-white',
+      cierre: 'bg-red-500 text-white',
+      festejo: 'bg-yellow-400 text-gray-800',
+    };
+    return colores[item.tipo] || 'bg-blue-500 text-white';
+  };
+
+  const getItemLabel = (item) => {
+    if (item._type === 'partido') return item.rival;
+    return item.titulo;
   };
 
   return (
-      <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">Calendario de Partidos</h1>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-800">Calendario</h1>
+        <Link to="/eventos" className="flex items-center space-x-1 text-sm text-[#00A651] hover:underline">
+          <FiStar size={16} />
+          <span>Ver eventos</span>
+        </Link>
+      </div>
 
       <div className="bg-white rounded-xl shadow-md p-4">
         <div className="flex items-center justify-between mb-4">
-          <button
-            onClick={prevMonth}
-            className="p-2 hover:bg-gray-100 rounded-lg"
-          >
+          <button onClick={prevMonth} className="p-2 hover:bg-gray-100 rounded-lg">
             <FiChevronLeft size={24} />
           </button>
           <h2 className="text-xl font-bold">
             {MONTHS[currentDate.getMonth()]} {currentDate.getFullYear()}
           </h2>
-          <button
-            onClick={nextMonth}
-            className="p-2 hover:bg-gray-100 rounded-lg"
-          >
+          <button onClick={nextMonth} className="p-2 hover:bg-gray-100 rounded-lg">
             <FiChevronRight size={24} />
           </button>
         </div>
 
         <div className="grid grid-cols-7 gap-1">
           {DAYS.map(day => (
-            <div key={day} className="text-center font-semibold text-gray-500 py-2">
-              {day}
-            </div>
+            <div key={day} className="text-center font-semibold text-gray-500 py-2">{day}</div>
           ))}
           
           {days.map((item, index) => {
-            const partidosDia = getPartidosForDate(item.date);
+            const itemsDia = getItemsForDate(item.date);
             return (
-              <div
-                key={index}
-                className={`min-h-[80px] border rounded-lg p-1 ${
-                  item.day ? 'bg-white' : 'bg-gray-50'
-                }`}
-              >
+              <div key={index} className={`min-h-[90px] border rounded-lg p-1 ${item.day ? 'bg-white' : 'bg-gray-50'}`}>
                 {item.day && (
                   <>
                     <div className="text-sm font-medium text-gray-700">{item.day}</div>
-                    {partidosDia.map(partido => (
+                    {itemsDia.slice(0, 3).map((i, idx) => (
                       <div
-                        key={partido.id}
-                        className={`text-xs p-1 rounded mt-1 truncate ${getPartidoColor(partido)}`}
-                        title={`${partido.categoria || 'Sub 11'} - ${partido.estado === 'jugado' ? `${partido.resultado_local} - ${partido.resultado_visitante}` : 'Por jugar'}`}
+                        key={`${i._type}-${i.id}`}
+                        className={`text-xs p-1 rounded mt-1 truncate ${getItemColor(i)}`}
+                        title={i._type === 'partido' ? `${i.categoria || 'Sub 11'} - ${i.estado === 'jugado' ? `${i.resultado_local}-${i.resultado_visitante}` : ''}` : i.titulo}
                       >
-                        {partido.rival}
+                        {getItemLabel(i)}
                       </div>
                     ))}
+                    {itemsDia.length > 3 && (
+                      <div className="text-xs text-gray-400 mt-1">+{itemsDia.length - 3} más</div>
+                    )}
                   </>
                 )}
               </div>
@@ -149,7 +166,11 @@ export default function Calendario() {
           <span className="px-2 py-1 rounded text-xs bg-yellow-400 text-gray-800">Empate</span>
           <span className="px-2 py-1 rounded text-xs bg-orange-500 text-white">Perdido</span>
           <span className="px-2 py-1 rounded text-xs bg-gray-200 text-gray-600">Por jugar</span>
+          <span className="px-2 py-1 rounded text-xs bg-blue-500 text-white">Evento</span>
+          <span className="px-2 py-1 rounded text-xs bg-purple-500 text-white">Torneo</span>
+          <span className="px-2 py-1 rounded text-xs bg-pink-400 text-white">Cumpleaños</span>
         </div>
+
         <h3 className="font-semibold mb-3">Próximos Partidos</h3>
         <div className="space-y-2">
           {partidos
