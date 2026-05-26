@@ -3,7 +3,7 @@ import { query } from "../config/db.js";
 
 const router = express.Router();
 
-router.post("/init", async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     // Tabla usuarios
     await query(`
