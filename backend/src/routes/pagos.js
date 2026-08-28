@@ -69,12 +69,12 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { fecha, monto, concepto, metodo_pago, categoria } = req.body;
+    const { jugador_id, fecha, monto, concepto, metodo_pago, categoria } = req.body;
 
     const result = await query(
-      `UPDATE pagos SET fecha = $1, monto = $2, concepto = $3, metodo_pago = $4, categoria = $5 
-       WHERE id = $6 RETURNING *`,
-      [fecha, monto, concepto, metodo_pago, categoria, id]
+      `UPDATE pagos SET jugador_id = $1, fecha = $2, monto = $3, concepto = $4, metodo_pago = $5, categoria = $6 
+       WHERE id = $7 RETURNING *`,
+      [jugador_id, fecha, monto, concepto, metodo_pago, categoria, id]
     );
 
     res.json(result.rows[0]);

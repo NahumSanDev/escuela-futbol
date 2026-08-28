@@ -32,6 +32,7 @@ export default function Pagos() {
   });
   const [otroConcepto, setOtroConcepto] = useState('');
   const [reciboPago, setReciboPago] = useState(null);
+  const [editandoPago, setEditandoPago] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -106,6 +107,33 @@ export default function Pagos() {
     XLSX.writeFile(wb, 'pagos_cefor.xlsx');
   };
 
+  const abrirNuevoPago = () => {
+    setEditandoPago(null);
+    setNuevoPago({ jugador_id: '', fecha: '', monto: '', concepto: '', metodo_pago: '', categoria: '' });
+    setOtroConcepto('');
+    setShowModal(true);
+  };
+
+  const abrirEditarPago = (pago) => {
+    const conceptoEsConfigurado = CONCEPTOS.includes(pago.concepto);
+    setEditandoPago(pago);
+    setNuevoPago({
+      jugador_id: pago.jugador_id,
+      fecha: typeof pago.fecha === 'string' ? pago.fecha.slice(0, 10) : pago.fecha,
+      monto: pago.monto,
+      concepto: conceptoEsConfigurado ? pago.concepto : 'Otro',
+      metodo_pago: pago.metodo_pago || pago.metodo || '',
+      categoria: pago.categoria || '',
+    });
+    setOtroConcepto(conceptoEsConfigurado ? '' : pago.concepto || '');
+    setShowModal(true);
+  };
+
+  const cerrarModal = () => {
+    setShowModal(false);
+    setEditandoPago(null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -113,12 +141,18 @@ export default function Pagos() {
         ...nuevoPago,
         concepto: nuevoPago.concepto === 'Otro' ? otroConcepto || 'Otro' : nuevoPago.concepto,
       };
-      const created = await pagosService.create(pagoData);
-      await fetchData();
-      setShowModal(false);
-      setNuevoPago({ jugador_id: '', fecha: '', monto: '', concepto: '', metodo_pago: '', categoria: '' });
-      setOtroConcepto('');
-      setReciboPago(created);
+      if (editandoPago) {
+        await pagosService.update(editandoPago.id, pagoData);
+        await fetchData();
+        cerrarModal();
+        setOtroConcepto('');
+      } else {
+        const created = await pagosService.create(pagoData);
+        await fetchData();
+        cerrarModal();
+        setOtroConcepto('');
+        setReciboPago(created);
+      }
     } catch (err) {
       alert('Error al guardar pago');
     }
@@ -148,7 +182,7 @@ export default function Pagos() {
             <span>Exportar Excel</span>
           </button>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={abrirNuevoPago}
             className="flex items-center space-x-2 bg-[#00A651] text-white px-4 py-2 rounded-lg hover:bg-[#008f45] transition-colors"
           >
             <FiPlus size={18} />
@@ -262,7 +296,7 @@ export default function Pagos() {
                       <button onClick={() => setReciboPago(pago)} title="Generar recibo" className="p-1 text-[#00A651] hover:bg-green-50 rounded">
                         <FiFileText size={16} />
                       </button>
-                      <button className="p-1 text-blue-600 hover:bg-blue-50 rounded">
+                      <button onClick={() => abrirEditarPago(pago)} title="Editar pago" className="p-1 text-blue-600 hover:bg-blue-50 rounded">
                         <FiEdit2 size={16} />
                       </button>
                       <button onClick={() => eliminarPago(pago.id)} className="p-1 text-red-600 hover:bg-red-50 rounded">
@@ -302,7 +336,7 @@ export default function Pagos() {
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Registrar Pago</h2>
+            <h2 className="text-xl font-bold mb-4">{editandoPago ? 'Editar Pago' : 'Registrar Pago'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Jugador</label>
@@ -397,7 +431,7 @@ export default function Pagos() {
               <div className="flex space-x-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
+                  onClick={cerrarModal}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   Cancelar
@@ -406,7 +440,7 @@ export default function Pagos() {
                   type="submit"
                   className="flex-1 px-4 py-2 bg-[#00A651] text-white rounded-lg hover:bg-[#008f45]"
                 >
-                  Guardar
+                  {editandoPago ? 'Actualizar' : 'Guardar'}
                 </button>
               </div>
             </form>
