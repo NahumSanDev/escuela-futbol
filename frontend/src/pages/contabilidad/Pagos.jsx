@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FiPlus, FiDownload, FiEdit2, FiTrash2, FiFileText } from 'react-icons/fi';
 import { pagosService, familiasService } from '../../services/api';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, formatDate } from '../../utils/formatters';
 import ReciboPago from '../../components/ReciboPago';
 import * as XLSX from 'xlsx';
 
@@ -15,6 +15,9 @@ export default function Pagos() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [filtroJugador, setFiltroJugador] = useState('');
+  const [filtroCategoria, setFiltroCategoria] = useState('');
+  const [filtroFecha, setFiltroFecha] = useState('');
+  const [filtroConcepto, setFiltroConcepto] = useState('');
   const [paginaActual, setPaginaActual] = useState(1);
   const registrosPorPagina = 10;
 
@@ -48,9 +51,23 @@ export default function Pagos() {
     }
   };
 
-  const pagosFiltrados = filtroJugador
-    ? pagos.filter(p => p.jugador_id === parseInt(filtroJugador))
-    : pagos;
+  const conceptosUnicos = [...new Set(pagos.map(p => p.concepto).filter(Boolean))].sort();
+
+  const pagosFiltrados = pagos.filter(p => {
+    if (filtroJugador && p.jugador_id !== parseInt(filtroJugador)) return false;
+    if (filtroCategoria && p.categoria !== filtroCategoria) return false;
+    if (filtroFecha && p.fecha !== filtroFecha) return false;
+    if (filtroConcepto && p.concepto !== filtroConcepto) return false;
+    return true;
+  });
+
+  const limpiarFiltros = () => {
+    setFiltroJugador('');
+    setFiltroCategoria('');
+    setFiltroFecha('');
+    setFiltroConcepto('');
+    setPaginaActual(1);
+  };
 
   const totalPaginas = Math.ceil(pagosFiltrados.length / registrosPorPagina);
   const pagosPaginados = pagosFiltrados.slice(
@@ -129,19 +146,67 @@ export default function Pagos() {
       </div>
 
       <div className="bg-white rounded-xl shadow-md p-4">
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Filtrar por Jugador</label>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Filtrar por Jugador</label>
             <select
               value={filtroJugador}
               onChange={(e) => { setFiltroJugador(e.target.value); setPaginaActual(1); }}
-              className="w-full md:w-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A651] focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A651] focus:border-transparent"
             >
               <option value="">Todos los jugadores</option>
               {familias.map(j => (
                 <option key={j.id} value={j.id}>{j.nombre_jugador}</option>
               ))}
             </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Filtrar por Categoría</label>
+            <select
+              value={filtroCategoria}
+              onChange={(e) => { setFiltroCategoria(e.target.value); setPaginaActual(1); }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A651] focus:border-transparent"
+            >
+              <option value="">Todas las categorías</option>
+              {CATEGORIAS.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Filtrar por Fecha</label>
+            <input
+              type="date"
+              value={filtroFecha}
+              onChange={(e) => { setFiltroFecha(e.target.value); setPaginaActual(1); }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A651] focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Filtrar por Concepto</label>
+            <select
+              value={filtroConcepto}
+              onChange={(e) => { setFiltroConcepto(e.target.value); setPaginaActual(1); }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00A651] focus:border-transparent"
+            >
+              <option value="">Todos los conceptos</option>
+              {conceptosUnicos.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
         </div>
+
+        {(filtroJugador || filtroCategoria || filtroFecha || filtroConcepto) && (
+          <div className="mb-4">
+            <button
+              onClick={limpiarFiltros}
+              className="text-sm text-[#00A651] font-medium hover:underline"
+            >
+              Limpiar filtros
+            </button>
+          </div>
+        )}
 
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -167,7 +232,7 @@ export default function Pagos() {
                       <span className="text-gray-400">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3">{pago.fecha}</td>
+                  <td className="px-4 py-3">{formatDate(pago.fecha)}</td>
                   <td className="px-4 py-3 font-medium">{formatCurrency(pago.monto)}</td>
                   <td className="px-4 py-3">{pago.concepto}</td>
                   <td className="px-4 py-3">{pago.metodo}</td>
