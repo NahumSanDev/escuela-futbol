@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FiPlus, FiDownload, FiEdit2, FiTrash2, FiFileText } from 'react-icons/fi';
+import { FiPlus, FiDownload, FiEdit2, FiTrash2, FiFileText, FiArrowUp, FiArrowDown } from 'react-icons/fi';
 import { pagosService, familiasService } from '../../services/api';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import ReciboPago from '../../components/ReciboPago';
@@ -18,6 +18,7 @@ export default function Pagos() {
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [filtroFecha, setFiltroFecha] = useState('');
   const [filtroConcepto, setFiltroConcepto] = useState('');
+  const [ordenFecha, setOrdenFecha] = useState('desc');
   const [paginaActual, setPaginaActual] = useState(1);
   const registrosPorPagina = 10;
 
@@ -53,13 +54,24 @@ export default function Pagos() {
 
   const conceptosUnicos = [...new Set(pagos.map(p => p.concepto).filter(Boolean))].sort();
 
-  const pagosFiltrados = pagos.filter(p => {
-    if (filtroJugador && p.jugador_id !== parseInt(filtroJugador)) return false;
-    if (filtroCategoria && p.categoria !== filtroCategoria) return false;
-    if (filtroFecha && p.fecha !== filtroFecha) return false;
-    if (filtroConcepto && p.concepto !== filtroConcepto) return false;
-    return true;
-  });
+  const pagosFiltrados = pagos
+    .filter(p => {
+      if (filtroJugador && p.jugador_id !== parseInt(filtroJugador)) return false;
+      if (filtroCategoria && p.categoria !== filtroCategoria) return false;
+      if (filtroFecha && p.fecha !== filtroFecha) return false;
+      if (filtroConcepto && p.concepto !== filtroConcepto) return false;
+      return true;
+    })
+    .sort((a, b) =>
+      ordenFecha === 'desc'
+        ? b.fecha.localeCompare(a.fecha)
+        : a.fecha.localeCompare(b.fecha)
+    );
+
+  const alternarOrdenFecha = () => {
+    setOrdenFecha(o => (o === 'desc' ? 'asc' : 'desc'));
+    setPaginaActual(1);
+  };
 
   const limpiarFiltros = () => {
     setFiltroJugador('');
@@ -214,7 +226,16 @@ export default function Pagos() {
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Jugador</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Categoría</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Fecha</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">
+                  <button
+                    onClick={alternarOrdenFecha}
+                    title={ordenFecha === 'desc' ? 'Más reciente primero' : 'Más antiguo primero'}
+                    className="inline-flex items-center gap-1 hover:text-[#00A651]"
+                  >
+                    Fecha
+                    {ordenFecha === 'desc' ? <FiArrowDown size={14} /> : <FiArrowUp size={14} />}
+                  </button>
+                </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Monto</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Concepto</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Método</th>
