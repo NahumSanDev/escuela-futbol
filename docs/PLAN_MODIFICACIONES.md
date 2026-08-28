@@ -46,3 +46,13 @@
 |---|----------|-----------|
 | 7.1 | ¿Cuánto tiempo se almacena la información? | No hay límite definido. Se almacena permanentemente mientras no se elimine. |
 | 7.2 | ¿Cuánto tiempo se almacenan comentarios y archivos? | Misma respuesta: permanentemente, mientras no se eliminen manualmente. |
+
+## 8. Recibos / Nota de Venta (Nuevo)
+
+| # | Solicitud | Estado |
+|---|-----------|--------|
+| 8.1 | Generar recibo/nota de venta descargable (imagen PNG o PDF) por pago | ✅ Completado |
+| 8.2 | Campo categoría en pagos y recibo: PONY, SUB 9, SUB 11, SUB 13 | ✅ Completado |
+| 8.3 | Logo CEFOR en el comprobante descargable | ✅ Completado |
+
+> **Nota deploy**: la migración `backend/migrations/add_categoria_pagos.sql` debe ejecutarse en el SQL Editor de Railway antes de poder guardar la categoría.

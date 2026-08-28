@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { FiPlus, FiDownload, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiDownload, FiEdit2, FiTrash2, FiFileText } from 'react-icons/fi';
 import { pagosService, familiasService } from '../../services/api';
 import { formatCurrency } from '../../utils/formatters';
+import ReciboPago from '../../components/ReciboPago';
 import * as XLSX from 'xlsx';
 
 const CONCEPTOS = ['Semana', 'Arbitraje', 'Uniforme', 'Torneo', 'Vacaciones', 'Otro'];
 const METODOS = ['Efectivo', 'Transferencia', 'Tarjeta', 'Bizum'];
+const CATEGORIAS = ['PONY', 'SUB 9', 'SUB 11', 'SUB 13'];
 
 export default function Pagos() {
   const [pagos, setPagos] = useState([]);
@@ -22,8 +24,10 @@ export default function Pagos() {
     monto: '',
     concepto: '',
     metodo_pago: '',
+    categoria: '',
   });
   const [otroConcepto, setOtroConcepto] = useState('');
+  const [reciboPago, setReciboPago] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -62,6 +66,7 @@ export default function Pagos() {
   const exportarExcel = () => {
     const ws = XLSX.utils.json_to_sheet(pagosFiltrados.map(p => ({
       Jugador: getJugadorNombre(p.jugador_id),
+      Categoría: p.categoria,
       Fecha: p.fecha,
       Monto: p.monto,
       Concepto: p.concepto,
@@ -79,11 +84,12 @@ export default function Pagos() {
         ...nuevoPago,
         concepto: nuevoPago.concepto === 'Otro' ? otroConcepto || 'Otro' : nuevoPago.concepto,
       };
-      await pagosService.create(pagoData);
+      const created = await pagosService.create(pagoData);
       await fetchData();
       setShowModal(false);
-      setNuevoPago({ jugador_id: '', fecha: '', monto: '', concepto: '', metodo_pago: '' });
+      setNuevoPago({ jugador_id: '', fecha: '', monto: '', concepto: '', metodo_pago: '', categoria: '' });
       setOtroConcepto('');
+      setReciboPago(created);
     } catch (err) {
       alert('Error al guardar pago');
     }
@@ -142,6 +148,7 @@ export default function Pagos() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Jugador</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Categoría</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Fecha</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Monto</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Concepto</th>
@@ -153,12 +160,22 @@ export default function Pagos() {
               {pagosPaginados.map((pago) => (
                 <tr key={pago.id} className="border-t hover:bg-gray-50">
                   <td className="px-4 py-3">{getJugadorNombre(pago.jugador_id)}</td>
+                  <td className="px-4 py-3">
+                    {pago.categoria ? (
+                      <span className="inline-block px-2 py-1 text-xs font-bold rounded-full bg-green-100 text-[#00A651]">{pago.categoria}</span>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">{pago.fecha}</td>
                   <td className="px-4 py-3 font-medium">{formatCurrency(pago.monto)}</td>
                   <td className="px-4 py-3">{pago.concepto}</td>
                   <td className="px-4 py-3">{pago.metodo}</td>
                   <td className="px-4 py-3">
                     <div className="flex space-x-2">
+                      <button onClick={() => setReciboPago(pago)} title="Generar recibo" className="p-1 text-[#00A651] hover:bg-green-50 rounded">
+                        <FiFileText size={16} />
+                      </button>
                       <button className="p-1 text-blue-600 hover:bg-blue-50 rounded">
                         <FiEdit2 size={16} />
                       </button>
@@ -224,6 +241,20 @@ export default function Pagos() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   required
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                <select
+                  value={nuevoPago.categoria}
+                  onChange={(e) => setNuevoPago({ ...nuevoPago, categoria: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                >
+                  <option value="">Seleccionar categoría</option>
+                  {CATEGORIAS.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Monto ($)</label>
@@ -295,6 +326,14 @@ export default function Pagos() {
             </form>
           </div>
         </div>
+      )}
+
+      {reciboPago && (
+        <ReciboPago
+          pago={reciboPago}
+          nombreJugador={getJugadorNombre(reciboPago.jugador_id)}
+          onClose={() => setReciboPago(null)}
+        />
       )}
     </div>
   );

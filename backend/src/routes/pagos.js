@@ -51,12 +51,12 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
 
 router.post('/', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { jugador_id, fecha, monto, concepto, metodo_pago } = req.body;
+    const { jugador_id, fecha, monto, concepto, metodo_pago, categoria } = req.body;
 
     const result = await query(
-      `INSERT INTO pagos (jugador_id, fecha, monto, concepto, metodo_pago) 
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [jugador_id, fecha, monto, concepto, metodo_pago]
+      `INSERT INTO pagos (jugador_id, fecha, monto, concepto, metodo_pago, categoria) 
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [jugador_id, fecha, monto, concepto, metodo_pago, categoria]
     );
 
     res.status(201).json(result.rows[0]);
@@ -69,12 +69,12 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { fecha, monto, concepto, metodo_pago } = req.body;
+    const { fecha, monto, concepto, metodo_pago, categoria } = req.body;
 
     const result = await query(
-      `UPDATE pagos SET fecha = $1, monto = $2, concepto = $3, metodo_pago = $4 
-       WHERE id = $5 RETURNING *`,
-      [fecha, monto, concepto, metodo_pago, id]
+      `UPDATE pagos SET fecha = $1, monto = $2, concepto = $3, metodo_pago = $4, categoria = $5 
+       WHERE id = $6 RETURNING *`,
+      [fecha, monto, concepto, metodo_pago, categoria, id]
     );
 
     res.json(result.rows[0]);
