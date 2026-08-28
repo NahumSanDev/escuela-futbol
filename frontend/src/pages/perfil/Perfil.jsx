@@ -1,25 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { FiUser, FiMail, FiPhone, FiCalendar, FiDollarSign } from 'react-icons/fi';
-import { partidosService, pagosService } from '../../services/api';
-import { formatCurrency, formatDate } from '../../utils/formatters';
+import { FiUser, FiMail, FiPhone, FiCalendar } from 'react-icons/fi';
+import { partidosService } from '../../services/api';
+import { formatDate } from '../../utils/formatters';
 
 export default function Perfil() {
   const { user, isAdmin } = useAuth();
   const [partidos, setPartidos] = useState([]);
-  const [pagos, setPagos] = useState([]);
 
   useEffect(() => {
     let mounted = true;
     const load = async () => {
       try {
-        const [partidosData, pagosData] = await Promise.all([
-          partidosService.getAll(),
-          pagosService.getMios(),
-        ]);
+        const partidosData = await partidosService.getAll();
         if (!mounted) return;
         setPartidos(partidosData || []);
-        setPagos(pagosData || []);
       } catch (err) {
         console.error('Error al cargar datos', err);
       }
@@ -82,46 +77,6 @@ export default function Perfil() {
 
       {!isAdmin && (
         <>
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h3 className="text-lg font-semibold mb-4 flex items-center">
-              <FiDollarSign className="mr-2" />
-              Mis Pagos
-            </h3>
-            {pagos.length === 0 ? (
-              <p className="text-gray-500 text-sm">Aún no registras pagos.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-gray-500 border-b">
-                      <th className="pb-2 font-medium">Jugador</th>
-                      <th className="pb-2 font-medium">Concepto</th>
-                      <th className="pb-2 font-medium">Fecha</th>
-                      <th className="pb-2 font-medium">Monto</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pagos.map((pago) => (
-                      <tr key={pago.id} className="border-b last:border-b-0">
-                        <td className="py-2">{pago.nombre_jugador || '—'}</td>
-                        <td className="py-2">
-                          {pago.concepto}
-                          {pago.categoria && (
-                            <span className="ml-2 inline-block px-2 py-0.5 text-xs font-bold rounded-full bg-green-100 text-[#00A651]">
-                              {pago.categoria}
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2">{formatDate(pago.fecha)}</td>
-                        <td className="py-2 font-semibold text-[#00A651]">{formatCurrency(pago.monto)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
           <div className="bg-white rounded-xl shadow-md p-6">
             <h3 className="text-lg font-semibold mb-4 flex items-center">
               <FiCalendar className="mr-2" />

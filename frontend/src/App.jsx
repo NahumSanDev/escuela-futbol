@@ -7,6 +7,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import Pagos from "./pages/contabilidad/Pagos";
+import MisPagos from "./pages/pagos/MisPagos";
 import Familias from "./pages/admin/Familias";
 import Partidos from "./pages/partidos/Partidos";
 import Resultados from "./pages/partidos/Resultados";
@@ -72,6 +73,7 @@ function Router() {
           }
         />
         <Route path="partidos" element={<Partidos />} />
+        <Route path="mis-pagos" element={<MisPagos />} />
         <Route path="resultados" element={<Resultados />} />
         <Route path="calendario" element={<Calendario />} />
         <Route path="eventos" element={<Eventos />} />
