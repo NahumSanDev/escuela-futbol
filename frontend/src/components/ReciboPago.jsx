@@ -93,7 +93,7 @@ export default function ReciboPago({ pago, nombreJugador, onClose }) {
               style={{ width: 64, height: 64, objectFit: 'contain', borderRadius: 999, background: '#ffffff', padding: 2 }}
             />
             <div>
-              <div style={{ color: '#ffffff', fontWeight: 800, fontSize: 20, letterSpacing: 1 }}>CEFOR</div>
+              <div style={{ color: '#ffffff', fontWeight: 800, fontSize: 20, letterSpacing: 1 }}>CEFOR FÉNIX</div>
               <div style={{ color: '#e5f9ee', fontSize: 12 }}>Escuela de Fútbol</div>
             </div>
           </div>
@@ -129,7 +129,7 @@ export default function ReciboPago({ pago, nombreJugador, onClose }) {
                 ¡Gracias por su pago!
               </div>
               <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 4 }}>
-                CEFOR — Escuela de Fútbol
+                CEFOR FÉNIX — Escuela de Fútbol
               </div>
             </div>
           </div>
