@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { FiDollarSign } from 'react-icons/fi';
+import { FiDollarSign, FiFileText } from 'react-icons/fi';
 import { pagosService } from '../../services/api';
 import { formatCurrency, formatDate } from '../../utils/formatters';
+import ReciboPago from '../../components/ReciboPago';
 
 export default function MisPagos() {
   const [pagos, setPagos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [reciboPago, setReciboPago] = useState(null);
 
   useEffect(() => {
     let mounted = true;
@@ -25,14 +27,11 @@ export default function MisPagos() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <FiDollarSign className="text-[#00A651]" size={22} />
-        <h1 className="text-2xl font-bold text-gray-800">Mis Pagos</h1>
-      </div>
+      <h1 className="text-2xl font-bold text-gray-800 whitespace-nowrap">Mis Pagos</h1>
 
       <div className="bg-white rounded-xl shadow-md p-6">
         <h3 className="text-lg font-semibold mb-2">Historial de pagos</h3>
-        <p className="text-sm text-gray-500 mb-4">Consulta aquí los pagos registrados de tu jugador. Contacta con la administración ante cualquier duda.</p>
+        <p className="text-sm text-gray-500 mb-4">Consulta aquí los pagos registrados de tu jugador. Descarga tu recibo en imagen o PDF.</p>
 
         {loading ? (
           <p className="text-center text-gray-500 py-8">Cargando...</p>
@@ -49,6 +48,7 @@ export default function MisPagos() {
                   <th className="pb-2 font-medium">Fecha</th>
                   <th className="pb-2 font-medium">Método</th>
                   <th className="pb-2 font-medium text-right">Monto</th>
+                  <th className="pb-2 font-medium"></th>
                 </tr>
               </thead>
               <tbody>
@@ -66,6 +66,16 @@ export default function MisPagos() {
                     <td className="py-2.5">{formatDate(pago.fecha)}</td>
                     <td className="py-2.5">{pago.metodo_pago || pago.metodo || '—'}</td>
                     <td className="py-2.5 font-semibold text-[#00A651] text-right">{formatCurrency(pago.monto)}</td>
+                    <td className="py-2.5 text-right">
+                      <button
+                        onClick={() => setReciboPago(pago)}
+                        title="Ver / descargar recibo"
+                        className="flex items-center gap-1 text-[#00A651] hover:bg-green-50 rounded px-2 py-1 text-xs font-medium"
+                      >
+                        <FiFileText size={14} />
+                        Recibo
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -73,6 +83,14 @@ export default function MisPagos() {
           </div>
         )}
       </div>
+
+      {reciboPago && (
+        <ReciboPago
+          pago={reciboPago}
+          nombreJugador={reciboPago.nombre_jugador}
+          onClose={() => setReciboPago(null)}
+        />
+      )}
     </div>
   );
 }

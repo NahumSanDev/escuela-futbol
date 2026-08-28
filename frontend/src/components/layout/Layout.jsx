@@ -61,7 +61,7 @@ export default function Layout() {
                   }
                 >
                   <item.icon size={18} />
-                  <span>{item.label}</span>
+                  <span className="whitespace-nowrap">{item.label}</span>
                 </NavLink>
               ))}
               <NotificationBell />
