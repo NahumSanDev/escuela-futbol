@@ -80,13 +80,13 @@ export default function ReciboPago({ pago, nombreJugador, onClose }) {
             maxWidth: '100%',
             margin: '0 auto 16px',
             background: '#ffffff',
-            border: '2px solid #00A651',
+            border: '2px solid #F97316',
             borderRadius: 10,
             overflow: 'hidden',
             fontFamily: 'Arial, Helvetica, sans-serif',
           }}
         >
-          <div style={{ background: '#00A651', padding: '16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ background: '#F97316', padding: '16px', display: 'flex', alignItems: 'center', gap: 12 }}>
             <img
               src={LOGO_URL}
               alt="Logo CEFOR"
@@ -94,7 +94,7 @@ export default function ReciboPago({ pago, nombreJugador, onClose }) {
             />
             <div>
               <div style={{ color: '#ffffff', fontWeight: 800, fontSize: 20, letterSpacing: 1 }}>CEFOR FÉNIX</div>
-              <div style={{ color: '#e5f9ee', fontSize: 12 }}>Escuela de Fútbol</div>
+              <div style={{ color: '#ffe8d6', fontSize: 12 }}>Escuela de Fútbol</div>
             </div>
           </div>
 
@@ -118,10 +118,10 @@ export default function ReciboPago({ pago, nombreJugador, onClose }) {
 
             <div style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, padding: '12px 14px', marginTop: 10,
+              background: '#fff7ed', border: '1px solid #fdba74', borderRadius: 8, padding: '12px 14px', marginTop: 10,
             }}>
-              <span style={{ fontWeight: 700, fontSize: 14, color: '#166534' }}>TOTAL PAGADO</span>
-              <span style={{ fontWeight: 800, fontSize: 24, color: '#047857' }}>{formatCurrency(pago.monto)}</span>
+              <span style={{ fontWeight: 700, fontSize: 14, color: '#9a3412' }}>TOTAL PAGADO</span>
+              <span style={{ fontWeight: 800, fontSize: 24, color: '#c2410c' }}>{formatCurrency(pago.monto)}</span>
             </div>
 
             <div style={{ textAlign: 'center', marginTop: 16, borderTop: '1px solid #e5e7eb', paddingTop: 12 }}>
@@ -130,6 +130,9 @@ export default function ReciboPago({ pago, nombreJugador, onClose }) {
               </div>
               <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 4 }}>
                 CEFOR FÉNIX — Escuela de Fútbol
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#c2410c', letterSpacing: 2, marginTop: 6 }}>
+                ¡CORAZÓN, PODER, FUERZA!
               </div>
             </div>
           </div>
