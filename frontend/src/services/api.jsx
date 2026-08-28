@@ -69,6 +69,8 @@ export const pagosService = {
   getAllSinLimite: () => fetchAPI("/pagos"),
   create: (data) =>
     fetchAPI("/pagos", { method: "POST", body: JSON.stringify(data) }),
+  update: (id, data) =>
+    fetchAPI(`/pagos/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   delete: (id) => fetchAPI(`/pagos/${id}`, { method: "DELETE" }),
   exportExcel: () => fetchAPI("/pagos/export"),
 };
