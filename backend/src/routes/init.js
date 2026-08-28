@@ -139,4 +139,28 @@ router.post("/", async (req, res) => {
   }
 });
 
+router.post("/fix-pony", async (req, res) => {
+  try {
+    const pagosResult = await query(
+      `UPDATE pagos
+       SET categoria = 'PONY'
+       WHERE regexp_replace(LOWER(categoria), '\\s+', '', 'g') = 'poni'`
+    );
+    const partidosResult = await query(
+      `UPDATE partidos
+       SET categoria = 'PONY'
+       WHERE regexp_replace(LOWER(categoria), '\\s+', '', 'g') = 'poni'`
+    );
+
+    res.json({
+      message: "Categoría PONY normalizada",
+      pagos_actualizados: pagosResult.rowCount,
+      partidos_actualizados: partidosResult.rowCount,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al normalizar categoría PONY", details: err.message });
+  }
+});
+
 export default router;
