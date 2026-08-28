@@ -49,6 +49,23 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
+router.get('/mios', authenticateToken, async (req, res) => {
+  try {
+    const result = await query(
+      `SELECT p.*, f.nombre_jugador
+       FROM pagos p
+       JOIN familias f ON p.jugador_id = f.id
+       WHERE f.usuario_id = $1
+       ORDER BY p.fecha DESC`,
+      [req.user.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+});
+
 router.post('/', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { jugador_id, fecha, monto, concepto, metodo_pago, categoria } = req.body;

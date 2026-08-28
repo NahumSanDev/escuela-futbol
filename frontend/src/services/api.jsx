@@ -73,6 +73,7 @@ export const pagosService = {
     fetchAPI(`/pagos/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   delete: (id) => fetchAPI(`/pagos/${id}`, { method: "DELETE" }),
   exportExcel: () => fetchAPI("/pagos/export"),
+  getMios: () => fetchAPI("/pagos/mios"),
 };
 
 export const partidosService = {

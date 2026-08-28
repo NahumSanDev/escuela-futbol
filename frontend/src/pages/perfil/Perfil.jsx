@@ -1,18 +1,40 @@
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { FiUser, FiMail, FiPhone, FiCalendar } from 'react-icons/fi';
+import { FiUser, FiMail, FiPhone, FiCalendar, FiDollarSign } from 'react-icons/fi';
+import { partidosService, pagosService } from '../../services/api';
+import { formatCurrency, formatDate } from '../../utils/formatters';
 
 export default function Perfil() {
   const { user, isAdmin } = useAuth();
+  const [partidos, setPartidos] = useState([]);
+  const [pagos, setPagos] = useState([]);
 
-  const proximosPartidos = [
-    { id: 1, rival: 'Real Madrid', fecha: '2026-03-08', hora: '10:00', lugar: 'Campo CEFOR' },
-    { id: 2, rival: 'FC Barcelona', fecha: '2026-03-15', hora: '11:00', lugar: 'Campo Barcelona' },
-  ];
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const [partidosData, pagosData] = await Promise.all([
+          partidosService.getAll(),
+          pagosService.getMios(),
+        ]);
+        if (!mounted) return;
+        setPartidos(partidosData || []);
+        setPagos(pagosData || []);
+      } catch (err) {
+        console.error('Error al cargar datos', err);
+      }
+    };
+    load();
+    return () => { mounted = false; };
+  }, []);
 
-  const ultimosResultados = [
-    { id: 1, rival: 'Atlético Madrid', resultado: '3 - 1', fecha: '2026-03-01' },
-    { id: 2, rival: 'Sevilla FC', resultado: '2 - 2', fecha: '2026-02-22' },
-  ];
+  const proximosPartidos = (partidos || [])
+    .filter(p => p.estado !== 'jugado')
+    .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
+  const resultados = (partidos || [])
+    .filter(p => p.estado === 'jugado' && p.resultado_local !== null)
+    .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
   return (
     <div className="space-y-6">
@@ -62,34 +84,82 @@ export default function Perfil() {
         <>
           <div className="bg-white rounded-xl shadow-md p-6">
             <h3 className="text-lg font-semibold mb-4 flex items-center">
+              <FiDollarSign className="mr-2" />
+              Mis Pagos
+            </h3>
+            {pagos.length === 0 ? (
+              <p className="text-gray-500 text-sm">Aún no registras pagos.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-gray-500 border-b">
+                      <th className="pb-2 font-medium">Jugador</th>
+                      <th className="pb-2 font-medium">Concepto</th>
+                      <th className="pb-2 font-medium">Fecha</th>
+                      <th className="pb-2 font-medium">Monto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pagos.map((pago) => (
+                      <tr key={pago.id} className="border-b last:border-b-0">
+                        <td className="py-2">{pago.nombre_jugador || '—'}</td>
+                        <td className="py-2">
+                          {pago.concepto}
+                          {pago.categoria && (
+                            <span className="ml-2 inline-block px-2 py-0.5 text-xs font-bold rounded-full bg-green-100 text-[#00A651]">
+                              {pago.categoria}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2">{formatDate(pago.fecha)}</td>
+                        <td className="py-2 font-semibold text-[#00A651]">{formatCurrency(pago.monto)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <h3 className="text-lg font-semibold mb-4 flex items-center">
               <FiCalendar className="mr-2" />
               Próximos Partidos
             </h3>
             <div className="space-y-3">
-              {proximosPartidos.map((partido) => (
-                <div key={partido.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">vs {partido.rival}</p>
-                    <p className="text-sm text-gray-500">{partido.fecha} - {partido.hora}</p>
+              {proximosPartidos.length === 0 ? (
+                <p className="text-gray-500 text-sm">No hay partidos próximos.</p>
+              ) : (
+                proximosPartidos.map((partido) => (
+                  <div key={partido.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium">vs {partido.rival}</p>
+                      <p className="text-sm text-gray-500">{formatDate(partido.fecha)} - {partido.hora || '—'}</p>
+                    </div>
+                    <span className="text-sm text-gray-500">{partido.lugar}</span>
                   </div>
-                  <span className="text-sm text-gray-500">{partido.lugar}</span>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
           <div className="bg-white rounded-xl shadow-md p-6">
             <h3 className="text-lg font-semibold mb-4">Resultados Recientes</h3>
             <div className="space-y-3">
-              {ultimosResultados.map((resultado) => (
-                <div key={resultado.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">vs {resultado.rival}</p>
-                    <p className="text-sm text-gray-500">{resultado.fecha}</p>
+              {resultados.length === 0 ? (
+                <p className="text-gray-500 text-sm">Aún no hay resultados.</p>
+              ) : (
+                resultados.map((resultado) => (
+                  <div key={resultado.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium">vs {resultado.rival}</p>
+                      <p className="text-sm text-gray-500">{formatDate(resultado.fecha)}</p>
+                    </div>
+                    <span className="text-lg font-bold text-[#00A651]">{resultado.resultado_local} - {resultado.resultado_visitante}</span>
                   </div>
-                  <span className="text-lg font-bold text-[#00A651]">{resultado.resultado}</span>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </>
