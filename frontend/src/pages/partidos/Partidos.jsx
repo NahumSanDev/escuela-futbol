@@ -128,10 +128,10 @@ export default function Partidos() {
               <div className="bg-[#00A651] text-white p-4">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs bg-white/20 px-2 py-0.5 rounded">{partido.categoria || 'Sub 11'}</span>
-                  <span className="text-xs">CEFOR</span>
+                  <span className="text-xs">CEFOR FÉNIX</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-lg">CEFOR</span>
+                  <span className="font-semibold text-lg">CEFOR FÉNIX</span>
                   <span className="text-2xl font-bold">vs</span>
                   <span className="font-semibold text-lg">{partido.rival}</span>
                 </div>
@@ -296,12 +296,12 @@ export default function Partidos() {
               </button>
             </div>
             <p className="text-gray-600 mb-4">
-              CEFOR vs <strong>{partidoResultado.rival}</strong> ({partidoResultado.categoria || 'Sub 11'})
+              CEFOR FÉNIX vs <strong>{partidoResultado.rival}</strong> ({partidoResultado.categoria || 'Sub 11'})
             </p>
             <form onSubmit={handleResultSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Goles CEFOR</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Goles CEFOR FÉNIX</label>
                   <input
                     type="number"
                     value={resultado.resultado_local}

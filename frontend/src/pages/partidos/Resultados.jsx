@@ -121,7 +121,7 @@ export default function Resultados() {
                   <span className="text-xs bg-white/20 px-2 py-0.5 rounded">{resultado.categoria || 'Sub 11'}</span>
                 </div>
                 <div className="flex items-center justify-between text-lg font-bold">
-                  <span>CEFOR</span>
+                  <span>CEFOR FÉNIX</span>
                   <span className="text-3xl">{resultado.resultado_local} - {resultado.resultado_visitante}</span>
                   <span>{resultado.rival}</span>
                 </div>
@@ -174,7 +174,7 @@ export default function Resultados() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Goles CEFOR</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Goles CEFOR FÉNIX</label>
                   <input
                     type="number"
                     value={nuevoResultado.resultado_local}
