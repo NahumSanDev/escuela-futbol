@@ -44,6 +44,11 @@ export default function ResetPassword() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#00A651] to-green-700 px-4">
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
+          <img
+            src="/logoCefor.jpeg"
+            alt="Logo CEFOR FÉNIX"
+            className="w-20 h-20 object-contain rounded-full border-2 border-[#00A651] mx-auto mb-3 bg-white p-1"
+          />
           <h1 className="text-3xl font-bold text-[#00A651]">CEFOR FÉNIX</h1>
           <p className="text-gray-500 mt-2">Nueva Contraseña</p>
         </div>
