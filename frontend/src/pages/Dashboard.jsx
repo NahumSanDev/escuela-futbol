@@ -56,8 +56,8 @@ export default function Dashboard() {
         </h1>
         <p className="mt-2 opacity-90">
           {isAdmin
-            ? "Panel de Administración CEFOR"
-            : "Escuela de Fútbol CEFOR"}
+            ? "Panel de Administración CEFOR FÉNIX"
+            : "Escuela de Fútbol CEFOR FÉNIX"}
         </p>
         {user?.nombre_jugador && (
           <p className="mt-1 text-sm opacity-75">Padre/Tutor: {user.nombre}</p>

@@ -64,7 +64,7 @@ export default function ForgotPassword() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#00A651] to-green-700 px-4">
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[#00A651]">CEFOR</h1>
+          <h1 className="text-3xl font-bold text-[#00A651]">CEFOR FÉNIX</h1>
           <p className="text-gray-500 mt-2">Recuperar Contraseña</p>
         </div>
 
