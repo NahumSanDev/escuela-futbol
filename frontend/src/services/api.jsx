@@ -93,6 +93,7 @@ export const avisosService = {
     fetchAPI("/avisos", { method: "POST", body: JSON.stringify(data) }),
   delete: (id) => fetchAPI(`/avisos/${id}`, { method: "DELETE" }),
   registrarClic: (id) => fetchAPI(`/avisos/${id}/clic`, { method: "POST" }),
+  getClics: (id) => fetchAPI(`/avisos/${id}/clics`),
 };
 
 export const comentariosService = {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FiPlus, FiFile, FiX, FiTrash2, FiMessageSquare } from "react-icons/fi";
+import { FiPlus, FiFile, FiX, FiTrash2, FiMessageSquare, FiEye } from "react-icons/fi";
 import { avisosService, comentariosService } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 
@@ -11,6 +11,9 @@ export default function Avisos() {
   const [expandedAviso, setExpandedAviso] = useState(null);
   const [comentarios, setComentarios] = useState({});
   const [nuevoComentario, setNuevoComentario] = useState("");
+  const [clicsModal, setClicsModal] = useState(null);
+  const [clicsLista, setClicsLista] = useState([]);
+  const [clicsLoading, setClicsLoading] = useState(false);
 
   const [nuevoAviso, setNuevoAviso] = useState({
     titulo: "",
@@ -63,6 +66,20 @@ export default function Avisos() {
   const abrirAdjunto = (avisoId, url) => {
     if (!isAdmin) registrarClic(avisoId);
     window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const abrirClics = async (avisoId) => {
+    setClicsModal(avisoId);
+    setClicsLoading(true);
+    setClicsLista([]);
+    try {
+      const data = await avisosService.getClics(avisoId);
+      setClicsLista(data);
+    } catch (err) {
+      console.error("Error al cargar clics", err);
+    } finally {
+      setClicsLoading(false);
+    }
   };
 
   const handleComentarioSubmit = async (avisoId) => {
@@ -147,12 +164,16 @@ export default function Avisos() {
                     {aviso.fecha_publicacion?.split("T")[0]}
                   </span>
                   {isAdmin && (
-                    <span
-                      className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full"
+                    <button
+                      onClick={() => abrirClics(aviso.id)}
+                      className="flex items-center gap-1 text-gray-500 hover:text-[#00A651] hover:bg-gray-50 px-1.5 py-0.5 rounded"
                       title="Personas que dieron clic en este aviso"
                     >
-                      👁 {aviso.usuarios_clic || 0} clics
-                    </span>
+                      <FiEye size={16} />
+                      <span className="text-xs font-medium">
+                        {aviso.usuarios_clic || 0}
+                      </span>
+                    </button>
                   )}
                   {isAdmin && (
                     <button
@@ -301,6 +322,67 @@ export default function Avisos() {
       {avisos.length === 0 && !loading && (
         <div className="text-center py-12 text-gray-500">
           No hay avisos publicados
+        </div>
+      )}
+
+      {clicsModal && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={() => setClicsModal(null)}
+        >
+          <div
+            className="bg-white rounded-xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Vistas del aviso</h2>
+              <button onClick={() => setClicsModal(null)}>
+                <FiX />
+              </button>
+            </div>
+
+            {clicsLoading ? (
+              <p className="text-center text-gray-500 py-6">Cargando...</p>
+            ) : clicsLista.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-sm text-gray-500 mb-2">
+                  {clicsLista.length}{" "}
+                  {clicsLista.length === 1 ? "persona" : "personas"} dieron clic
+                  en este aviso
+                </p>
+                {clicsLista.map((c) => (
+                  <div
+                    key={c.id}
+                    className="flex items-center justify-between bg-gray-50 rounded-lg p-3"
+                  >
+                    <div className="flex items-center gap-2">
+                      {c.rol === "admin" && (
+                        <span className="text-xs bg-[#00A651] text-white px-2 py-0.5 rounded">
+                          Admin
+                        </span>
+                      )}
+                      <span className="font-medium text-sm text-gray-800">
+                        {c.nombre}
+                      </span>
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      {new Date(c.created_at).toLocaleString("es-ES", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-gray-500 py-6">
+                Todavía nadie ha dado clic en este aviso
+              </p>
+            )}
+          </div>
         </div>
       )}
 

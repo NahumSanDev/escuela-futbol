@@ -26,6 +26,24 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
+router.get('/:id/clics', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await query(
+      `SELECT c.id, c.created_at, u.id AS usuario_id, u.nombre, u.rol
+       FROM avisos_clics c
+       JOIN usuarios u ON c.usuario_id = u.id
+       WHERE c.aviso_id = $1
+       ORDER BY c.created_at DESC`,
+      [id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+});
+
 router.post('/:id/clic', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
