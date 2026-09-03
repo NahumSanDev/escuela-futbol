@@ -59,7 +59,7 @@ export default function Pagos() {
     .filter(p => {
       if (filtroJugador && p.jugador_id !== parseInt(filtroJugador)) return false;
       if (filtroCategoria && p.categoria !== filtroCategoria) return false;
-      if (filtroFecha && p.fecha !== filtroFecha) return false;
+      if (filtroFecha && (p.fecha || '').toString().slice(0, 10) !== filtroFecha) return false;
       if (filtroConcepto && p.concepto !== filtroConcepto) return false;
       return true;
     })

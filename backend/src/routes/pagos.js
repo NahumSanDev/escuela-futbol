@@ -22,7 +22,7 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
       params
     );
 
-    let queryText = `SELECT p.*, f.nombre_jugador 
+    let queryText = `SELECT p.id, p.jugador_id, to_char(p.fecha, 'YYYY-MM-DD') AS fecha, p.monto, p.concepto, p.metodo_pago, p.categoria, p.created_at, f.nombre_jugador 
        FROM pagos p 
        LEFT JOIN familias f ON p.jugador_id = f.id 
        ${whereClause}
@@ -52,7 +52,7 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
 router.get('/mios', authenticateToken, async (req, res) => {
   try {
     const result = await query(
-      `SELECT p.*, f.nombre_jugador
+      `SELECT p.id, p.jugador_id, to_char(p.fecha, 'YYYY-MM-DD') AS fecha, p.monto, p.concepto, p.metodo_pago, p.categoria, p.created_at, f.nombre_jugador
        FROM pagos p
        JOIN familias f ON p.jugador_id = f.id
        WHERE f.usuario_id = $1

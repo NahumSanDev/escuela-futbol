@@ -10,10 +10,10 @@ export const formatCurrency = (amount) => {
 
 export const formatDate = (dateString) => {
   if (!dateString) return "";
-  const date = new Date(dateString);
-  return date.toLocaleDateString("es-ES", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  // Evitar el desfase de zona horaria: usar solo la parte de fecha YYYY-MM-DD
+  const datePart = dateString.toString().split("T")[0].split(" ")[0];
+  const parts = datePart.split("-");
+  if (parts.length !== 3) return dateString;
+  const [y, m, d] = parts;
+  return `${d}/${m}/${y}`;
 };
