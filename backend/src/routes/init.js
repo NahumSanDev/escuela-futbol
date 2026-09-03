@@ -129,6 +129,17 @@ router.post("/", async (req, res) => {
       CREATE INDEX IF NOT EXISTS idx_comentarios_usuario ON comentarios(usuario_id)
     `);
 
+    // Tabla avisos_clics (registro de visitas/clics por usuario a cada aviso)
+    await query(`
+      CREATE TABLE IF NOT EXISTS avisos_clics (
+        id SERIAL PRIMARY KEY,
+        aviso_id INTEGER NOT NULL REFERENCES avisos(id) ON DELETE CASCADE,
+        usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (aviso_id, usuario_id)
+      )
+    `);
+
     res.json({ message: "Base de datos inicializada correctamente" });
   } catch (err) {
     console.error("Error completo:", err);

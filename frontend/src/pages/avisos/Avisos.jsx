@@ -48,7 +48,21 @@ export default function Avisos() {
     } else {
       setExpandedAviso(avisoId);
       cargarComentarios(avisoId);
+      if (!isAdmin) registrarClic(avisoId);
     }
+  };
+
+  const registrarClic = async (avisoId) => {
+    try {
+      await avisosService.registrarClic(avisoId);
+    } catch (err) {
+      console.error("Error al registrar clic", err);
+    }
+  };
+
+  const abrirAdjunto = (avisoId, url) => {
+    if (!isAdmin) registrarClic(avisoId);
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handleComentarioSubmit = async (avisoId) => {
@@ -133,6 +147,14 @@ export default function Avisos() {
                     {aviso.fecha_publicacion?.split("T")[0]}
                   </span>
                   {isAdmin && (
+                    <span
+                      className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full"
+                      title="Personas que dieron clic en este aviso"
+                    >
+                      👁 {aviso.usuarios_clic || 0} clics
+                    </span>
+                  )}
+                  {isAdmin && (
                     <button
                       onClick={() => eliminarAviso(aviso.id)}
                       className="text-red-500 hover:bg-red-50 p-1 rounded"
@@ -148,8 +170,10 @@ export default function Avisos() {
                   {aviso.archivo_url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
                     <a
                       href={aviso.archivo_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        abrirAdjunto(aviso.id, aviso.archivo_url);
+                      }}
                     >
                       <img
                         src={aviso.archivo_url}
@@ -160,8 +184,10 @@ export default function Avisos() {
                   ) : (
                     <a
                       href={aviso.archivo_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        abrirAdjunto(aviso.id, aviso.archivo_url);
+                      }}
                       className="flex items-center space-x-2 text-[#00A651] hover:underline"
                     >
                       <FiFile size={18} />

@@ -7,12 +7,35 @@ const router = express.Router();
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const result = await query(
-      `SELECT a.*, u.nombre as publicado_por_nombre 
+      `SELECT a.*, u.nombre as publicado_por_nombre,
+              COALESCE(clics.total_clics, 0) AS total_clics,
+              COALESCE(clics.usuarios_clic, 0) AS usuarios_clic
        FROM avisos a 
-       LEFT JOIN usuarios u ON a.publicado_por = u.id 
+       LEFT JOIN usuarios u ON a.publicado_por = u.id
+       LEFT JOIN (
+         SELECT aviso_id, COUNT(*) AS total_clics, COUNT(DISTINCT usuario_id) AS usuarios_clic
+         FROM avisos_clics
+         GROUP BY aviso_id
+       ) clics ON clics.aviso_id = a.id
        ORDER BY a.fecha_publicacion DESC`
     );
     res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+});
+
+router.post('/:id/clic', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await query(
+      `INSERT INTO avisos_clics (aviso_id, usuario_id)
+       VALUES ($1, $2)
+       ON CONFLICT (aviso_id, usuario_id) DO NOTHING`,
+      [id, req.user.id]
+    );
+    res.json({ message: 'Clic registrado' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error del servidor' });
