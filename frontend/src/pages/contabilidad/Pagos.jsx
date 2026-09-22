@@ -6,6 +6,7 @@ import ReciboPago from '../../components/ReciboPago';
 import * as XLSX from 'xlsx';
 
 const CONCEPTOS = ['Semana', 'Arbitraje', 'Uniforme', 'Torneo', 'Vacaciones', 'Otro'];
+const SEMANAS = ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4', 'Semana 5'];
 const METODOS = ['Efectivo', 'Transferencia', 'Tarjeta', 'Bizum'];
 const CATEGORIAS = ['PONY', 'SUB 9', 'SUB 11', 'SUB 13'];
 
@@ -31,6 +32,7 @@ export default function Pagos() {
     categoria: '',
   });
   const [otroConcepto, setOtroConcepto] = useState('');
+  const [semanaPago, setSemanaPago] = useState('');
   const [reciboPago, setReciboPago] = useState(null);
   const [editandoPago, setEditandoPago] = useState(null);
 
@@ -111,20 +113,23 @@ export default function Pagos() {
     setEditandoPago(null);
     setNuevoPago({ jugador_id: '', fecha: '', monto: '', concepto: '', metodo_pago: '', categoria: '' });
     setOtroConcepto('');
+    setSemanaPago('');
     setShowModal(true);
   };
 
   const abrirEditarPago = (pago) => {
-    const conceptoEsConfigurado = CONCEPTOS.includes(pago.concepto);
+    const esSemana = SEMANAS.includes(pago.concepto);
+    const conceptoEsConfigurado = CONCEPTOS.includes(pago.concepto) || esSemana;
     setEditandoPago(pago);
     setNuevoPago({
       jugador_id: pago.jugador_id,
       fecha: typeof pago.fecha === 'string' ? pago.fecha.slice(0, 10) : pago.fecha,
       monto: pago.monto,
-      concepto: conceptoEsConfigurado ? pago.concepto : 'Otro',
+      concepto: esSemana ? 'Semana' : (conceptoEsConfigurado ? pago.concepto : 'Otro'),
       metodo_pago: pago.metodo_pago || pago.metodo || '',
       categoria: pago.categoria || '',
     });
+    setSemanaPago(esSemana ? pago.concepto : '');
     setOtroConcepto(conceptoEsConfigurado ? '' : pago.concepto || '');
     setShowModal(true);
   };
@@ -137,20 +142,28 @@ export default function Pagos() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      let conceptoFinal = nuevoPago.concepto;
+      if (nuevoPago.concepto === 'Otro') {
+        conceptoFinal = otroConcepto || 'Otro';
+      } else if (nuevoPago.concepto === 'Semana') {
+        conceptoFinal = semanaPago || 'Semana';
+      }
       const pagoData = {
         ...nuevoPago,
-        concepto: nuevoPago.concepto === 'Otro' ? otroConcepto || 'Otro' : nuevoPago.concepto,
+        concepto: conceptoFinal,
       };
       if (editandoPago) {
         await pagosService.update(editandoPago.id, pagoData);
         await fetchData();
         cerrarModal();
         setOtroConcepto('');
+        setSemanaPago('');
       } else {
         const created = await pagosService.create(pagoData);
         await fetchData();
         cerrarModal();
         setOtroConcepto('');
+        setSemanaPago('');
         setReciboPago(created);
       }
     } catch (err) {
@@ -401,6 +414,22 @@ export default function Pagos() {
                   ))}
                 </select>
               </div>
+              {nuevoPago.concepto === 'Semana' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Semana</label>
+                  <select
+                    value={semanaPago}
+                    onChange={(e) => setSemanaPago(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    required
+                  >
+                    <option value="">Seleccionar semana</option>
+                    {SEMANAS.map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               {nuevoPago.concepto === 'Otro' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Especificar concepto</label>
