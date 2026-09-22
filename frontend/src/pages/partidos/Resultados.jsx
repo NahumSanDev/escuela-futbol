@@ -9,7 +9,7 @@ export default function Resultados() {
   const { isAdmin } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [editando, setEditando] = useState(null);
-  const CATEGORIAS = ['Sub 9', 'Sub 11', 'Sub 13'];
+  const CATEGORIAS = ['PONY', 'Sub 9', 'Sub 11', 'Sub 13'];
 
   const [nuevoResultado, setNuevoResultado] = useState({
     rival: '',

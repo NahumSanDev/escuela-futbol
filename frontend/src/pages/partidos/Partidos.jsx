@@ -11,7 +11,7 @@ import {
 import { partidosService } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 
-const CATEGORIAS = ["Sub 9", "Sub 11", "Sub 13"];
+const CATEGORIAS = ["PONY", "Sub 9", "Sub 11", "Sub 13"];
 
 export default function Partidos() {
   const [partidos, setPartidos] = useState([]);
