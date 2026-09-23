@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FiChevronLeft, FiChevronRight, FiPlus, FiTrash2 } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiPlus, FiTrash2, FiDownload } from 'react-icons/fi';
 import { pagosService, familiasService } from '../../services/api';
 import { formatCurrency } from '../../utils/formatters';
 import { mesAnterior, mesSiguiente, mesActual, nombreMes, rangoSemana } from '../../utils/semanas';
@@ -9,6 +9,9 @@ const TIPOS = [
   { valor: 'colegiatura', etiqueta: 'Colegiatura' },
   { valor: 'arbitraje', etiqueta: 'Arbitraje' },
 ];
+const ORDEN_CATEGORIAS = ['PONY', 'SUB 9', 'SUB 11', 'SUB 13'];
+
+const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 export default function ControlPagos() {
   const [mes, setMes] = useState(mesActual());
@@ -19,9 +22,10 @@ export default function ControlPagos() {
   const [modal, setModal] = useState(null);
 
   useEffect(() => {
-    setLoading(true);
-    Promise.all([pagosService.getControl(mes), familiasService.getAll()])
-      .then(([control, fam]) => {
+    const cargar = async () => {
+      setLoading(true);
+      try {
+        const [control, fam] = await Promise.all([pagosService.getControl(mes), familiasService.getAll()]);
         setData(control);
         setFamilias(fam || []);
         setSemanaActiva((prev) => {
@@ -30,15 +34,136 @@ export default function ControlPagos() {
           }
           return prev;
         });
-      })
-      .catch((err) => console.error('Error al cargar control de pagos', err))
-      .finally(() => setLoading(false));
+      } catch (err) {
+        console.error('Error al cargar control de pagos', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    cargar();
   }, [mes]);
 
   const cambiarMes = (dir) => setMes(dir === 'prev' ? mesAnterior(mes) : mesSiguiente(mes));
 
   const semanaInfo = data?.semanas.find((s) => s.semana === semanaActiva);
   const totalSemana = data?.totales?.[semanaActiva];
+
+  const exportarExcel = () => {
+    if (!data) return;
+    const semanas = data.semanas;
+    const totalCols = 3 + semanas.length * 5;
+
+    const td = (v, st = '') => `<td${st}>${v}</td>`;
+
+    const titulo = `CONTROL DE PAGOS · ${nombreMes(mes).toUpperCase()}`;
+
+    // Cabecera de semanas (fila agrupada SEMANA N)
+    let filaSemanas = `${td('NO.')}${td('NOMBRE')}${td('CATEGORÍA')}`;
+    semanas.forEach((s) => {
+      filaSemanas += `<td colspan="5" style="background:#00A651;color:#fff;border:1px solid #008f45;font-weight:bold;text-align:center">SEMANA ${s.semana}</td>`;
+    });
+
+    // Subcabecera MAR VIE SÁB COLEGIATURA ARBITRAJE x semana
+    let filaSub = `${td('')}${td('')}${td('')}`;
+    semanas.forEach(() => {
+      filaSub +=
+        '<td style="background:#E6F4EA;border:1px solid #ccc;font-weight:bold;text-align:center">MAR</td>' +
+        '<td style="background:#E6F4EA;border:1px solid #ccc;font-weight:bold;text-align:center">VIE</td>' +
+        '<td style="background:#E6F4EA;border:1px solid #ccc;font-weight:bold;text-align:center">SÁB</td>' +
+        '<td style="background:#E6F4EA;border:1px solid #ccc;font-weight:bold;text-align:center">COLEGIATURA</td>' +
+        '<td style="background:#E6F4EA;border:1px solid #ccc;font-weight:bold;text-align:center">ARBITRAJE</td>';
+    });
+
+    // Fila de fechas
+    let filaFechas = `${td('')}${td('')}${td('')}`;
+    semanas.forEach((s) => {
+      const f = (iso) => { const [, m, d] = iso.split('-'); return `${d}/${m}`; };
+      filaFechas +=
+        `${td(f(s.mar), ' style="border:1px solid #ccc;text-align:center"')}` +
+        `${td(f(s.vie), ' style="border:1px solid #ccc;text-align:center"')}` +
+        `${td(f(s.sab), ' style="border:1px solid #ccc;text-align:center"')}` +
+        `${td('', ' style="border:1px solid #ccc"')}${td('', ' style="border:1px solid #ccc"')}`;
+    });
+
+    // Filas de jugadores
+    let filas = '';
+    data.jugadores.forEach((j, idx) => {
+      let f = `${td(idx + 1, ' style="border:1px solid #ccc;text-align:center"')}`;
+      f += `<td style="border:1px solid #ccc;font-weight:bold">${esc(j.nombre)}</td>`;
+      f += `<td style="border:1px solid #ccc;text-align:center${j.categoria ? '' : ''}">${esc(j.categoria || '—')}</td>`;
+      semanas.forEach((s) => {
+        const sc = j.semanas[s.semana].colegiatura;
+        const sa = j.semanas[s.semana].arbitraje;
+        const pagado = sc > 0 && sa > 0;
+        const est = pagado
+          ? 'background:#DFF5E6;color:#008f45;border:1px solid #ccc;font-weight:bold;text-align:center'
+          : 'background:#FDECEA;color:#B3261E;border:1px solid #ccc;font-weight:bold;text-align:center';
+        f += `<td colspan="3" style="${est}">${pagado ? 'PAGADO' : 'PENDIENTE'}</td>`;
+        f += `<td style="border:1px solid #ccc;text-align:right;mso-number-format:'\\"\\$\\"#,##0.00'">${sc > 0 ? sc.toFixed(2) : ''}</td>`;
+        f += `<td style="border:1px solid #ccc;text-align:right;mso-number-format:'\\"\\$\\"#,##0.00'">${sa > 0 ? sa.toFixed(2) : ''}</td>`;
+      });
+      filas += `<tr>${f}</tr>`;
+    });
+
+    // Totales por categoría
+    const cats = [...new Set(data.jugadores.map((j) => j.categoria).filter(Boolean))].sort(
+      (a, b) => ORDEN_CATEGORIAS.indexOf(a) - ORDEN_CATEGORIAS.indexOf(b)
+    );
+    let filasTot = '';
+    cats.forEach((cat) => {
+      const jugs = data.jugadores.filter((j) => j.categoria === cat);
+      let f = `<td style="border:1px solid #ccc;font-weight:bold;background:#F3F4F6">${esc(cat)}</td>`;
+      f += '<td colspan="2" style="background:#F3F4F6;border:1px solid #ccc"></td>';
+      semanas.forEach((s) => {
+        let tc = 0, ta = 0;
+        jugs.forEach((j) => { tc += j.semanas[s.semana].colegiatura; ta += j.semanas[s.semana].arbitraje; });
+        f += '<td colspan="3" style="border:1px solid #ccc"></td>';
+        f += `<td style="border:1px solid #ccc;text-align:right;font-weight:bold;mso-number-format:'\\"\\$\\"#,##0.00'">${tc.toFixed(2)}</td>`;
+        f += `<td style="border:1px solid #ccc;text-align:right;font-weight:bold;mso-number-format:'\\"\\$\\"#,##0.00'">${ta.toFixed(2)}</td>`;
+      });
+      filasTot += `<tr>${f}</tr>`;
+    });
+
+    // Total general + resumen pagados
+    let fg = '<td style="border:1px solid #000;font-weight:bold;background:#00A651;color:#fff">TOTAL GENERAL</td>';
+    fg += '<td colspan="2" style="border:1px solid #000;background:#00A651"></td>';
+    let fp = '<td style="border:1px solid #ccc;font-weight:bold;background:#F3F4F6">PAGADOS (jugadores)</td>';
+    fp += '<td colspan="2" style="border:1px solid #ccc;background:#F3F4F6"></td>';
+    semanas.forEach((s) => {
+      const t = data.totales[s.semana];
+      fg += '<td colspan="3" style="border:1px solid #000;background:#00A651"></td>';
+      fg += `<td style="border:1px solid #000;background:#00A651;color:#fff;font-weight:bold;text-align:right;mso-number-format:'\\"\\$\\"#,##0.00'">${t.colegiatura.toFixed(2)}</td>`;
+      fg += `<td style="border:1px solid #000;background:#00A651;color:#fff;font-weight:bold;text-align:right;mso-number-format:'\\"\\$\\"#,##0.00'">${t.arbitraje.toFixed(2)}</td>`;
+      fp += '<td colspan="3" style="border:1px solid #ccc;background:#F3F4F6"></td>';
+      fp += `<td colspan="2" style="border:1px solid #ccc;background:#F3F4F6;text-align:center;font-weight:bold">${t.pagados} de ${t.pagados + t.pendientes}</td>`;
+    });
+
+    const html =
+      '<html><head><meta charset="utf-8"/></head><body>' +
+      `<table border="0" cellspacing="0" cellpadding="4" style="border-collapse:collapse;font-family:Arial">` +
+      `<tr><td colspan="${totalCols}" style="background:#F97316;color:#fff;font-size:16px;font-weight:bold;text-align:center;padding:8px">${titulo}</td></tr>` +
+      `<tr><td colspan="${totalCols}" style="color:#666;font-size:11px;text-align:center;padding:4px">Generado el ${new Date().toLocaleDateString('es-MX')} · ${esc(nombreMes(mes))}</td></tr>` +
+      `<tr>${filaSemanas}</tr>` +
+      `<tr>${filaSub}</tr>` +
+      `<tr>${filaFechas}</tr>` +
+      filas +
+      `<tr><td colspan="${totalCols}" style="border-top:2px solid #000">&nbsp;</td></tr>` +
+      `<tr><td colspan="${totalCols}" style="font-weight:bold;background:#F3F4F6;padding:4px">TOTALES POR CATEGORÍA</td></tr>` +
+      filasTot +
+      `<tr>${fg}</tr>` +
+      `<tr>${fp}</tr>` +
+      '</table></body></html>';
+
+    const blob = new Blob(['\ufeff', html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `control-pagos-${mes}.xls`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const abrirModal = (opciones) => {
     const pagoExistente = opciones.jugador
@@ -80,7 +205,7 @@ export default function ControlPagos() {
       setModal(null);
       const control = await pagosService.getControl(mes);
       setData(control);
-    } catch (err) {
+    } catch {
       alert('Error al guardar el pago');
     }
   };
@@ -93,7 +218,7 @@ export default function ControlPagos() {
       setModal(null);
       const control = await pagosService.getControl(mes);
       setData(control);
-    } catch (err) {
+    } catch {
       alert('Error al eliminar el pago');
     }
   };
@@ -125,13 +250,23 @@ export default function ControlPagos() {
           <h1 className="text-2xl font-bold text-gray-800">Control de Pagos</h1>
           <p className="text-sm text-gray-500">Padrón semanal de colegiatura y arbitraje por jugador.</p>
         </div>
-        <button
-          onClick={() => abrirModal({ jugador: null, tipo: 'colegiatura' })}
-          className="flex items-center space-x-2 bg-[#00A651] text-white px-4 py-2 rounded-lg hover:bg-[#008f45] transition-colors"
-        >
-          <FiPlus size={18} />
-          <span>Nuevo Pago</span>
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={exportarExcel}
+            disabled={!data || loading}
+            className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+          >
+            <FiDownload size={18} />
+            <span>Exportar Excel</span>
+          </button>
+          <button
+            onClick={() => abrirModal({ jugador: null, tipo: 'colegiatura' })}
+            className="flex items-center space-x-2 bg-[#00A651] text-white px-4 py-2 rounded-lg hover:bg-[#008f45] transition-colors"
+          >
+            <FiPlus size={18} />
+            <span>Nuevo Pago</span>
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-md p-4">
