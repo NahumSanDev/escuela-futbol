@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import sharp from 'sharp';
+import { Jimp } from 'jimp';
 import { query } from '../config/db.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 import { crearNotificacion } from './notificaciones.js';
@@ -10,7 +10,6 @@ const router = express.Router();
 const MAX_IMAGEN_MB = 5; // límite por archivo cargado (original)
 const LIMITE_IMAGENES_MB = Number(process.env.LIMITE_IMAGENES_MB || 30); // límite total de imágenes de Market (30MB por defecto, acorde a plan base Railway)
 const ANCHO_MAX = 800; // px máximo de ancho
-const CALIDAD = 80; // calidad WebP
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -55,11 +54,12 @@ router.post('/upload', authenticateToken, requireAdmin, upload.single('imagen'),
 
     const espacio = await espacioImagenesUsado();
 
-    // Convertir a WebP optimizado
-    const bufferOptimizado = await sharp(req.file.buffer)
-      .resize({ width: ANCHO_MAX, withoutEnlargement: true })
-      .webp({ quality: CALIDAD })
-      .toBuffer();
+    // Convertir a JPEG optimizado (pura JS, sin binarios nativos)
+    const imagen = await Jimp.fromBuffer(req.file.buffer);
+    if (imagen.bitmap.width > ANCHO_MAX) {
+      imagen.resize({ w: ANCHO_MAX });
+    }
+    const bufferOptimizado = await imagen.getBuffer('image/jpeg', { quality: 75 });
 
     const nuevoBytes = bufferOptimizado.length;
     if (espacio.bytes + nuevoBytes > espacio.limiteBytes) {
@@ -69,7 +69,7 @@ router.post('/upload', authenticateToken, requireAdmin, upload.single('imagen'),
       });
     }
 
-    const dataUri = `data:image/webp;base64,${bufferOptimizado.toString('base64')}`;
+    const dataUri = `data:image/jpeg;base64,${bufferOptimizado.toString('base64')}`;
 
     res.status(201).json({
       imagen_url: dataUri,

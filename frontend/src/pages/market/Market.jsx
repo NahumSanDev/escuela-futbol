@@ -274,7 +274,7 @@ export default function Market() {
                     />
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Se optimiza automáticamente a WebP (máx 800px, calidad 80) para ocupar el menor espacio.</p>
+                <p className="text-xs text-gray-500 mt-1">Se optimiza automáticamente a JPEG (máx 800px) para ocupar el menor espacio.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
@@ -376,7 +376,7 @@ export default function Market() {
                     />
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Se optimiza automáticamente a WebP (máx 800px, calidad 80) para ocupar el menor espacio.</p>
+                <p className="text-xs text-gray-500 mt-1">Se optimiza automáticamente a JPEG (máx 800px) para ocupar el menor espacio.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
