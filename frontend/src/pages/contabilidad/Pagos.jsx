@@ -4,7 +4,7 @@ import { pagosService, familiasService } from '../../services/api';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { obtenerSemanasMes, mesActual, rangoSemana } from '../../utils/semanas';
 import ReciboPago from '../../components/ReciboPago';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 
 const CONCEPTOS = ['Semana', 'Arbitraje', 'Uniforme', 'Torneo', 'Vacaciones', 'Otro'];
 const METODOS = ['Efectivo', 'Transferencia', 'Tarjeta', 'Bizum'];

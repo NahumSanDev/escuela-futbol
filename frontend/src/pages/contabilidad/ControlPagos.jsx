@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FiChevronLeft, FiChevronRight, FiPlus, FiTrash2, FiDownload } from 'react-icons/fi';
+import * as XLSX from 'xlsx-js-style';
 import { pagosService, familiasService } from '../../services/api';
 import { formatCurrency } from '../../utils/formatters';
 import { mesAnterior, mesSiguiente, mesActual, nombreMes, rangoSemana } from '../../utils/semanas';
@@ -10,8 +11,6 @@ const TIPOS = [
   { valor: 'arbitraje', etiqueta: 'Arbitraje' },
 ];
 const ORDEN_CATEGORIAS = ['PONY', 'SUB 9', 'SUB 11', 'SUB 13'];
-
-const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 export default function ControlPagos() {
   const [mes, setMes] = useState(mesActual());
@@ -53,116 +52,149 @@ export default function ControlPagos() {
     const semanas = data.semanas;
     const totalCols = 3 + semanas.length * 5;
 
-    const td = (v, st = '') => `<td${st}>${v}</td>`;
+    const ws = XLSX.utils.aoa_to_sheet([]);
+    const merges = [];
+    let fila = 0;
+
+    const A1 = (r, c) => XLSX.utils.encode_cell({ r, c });
+    const thin = { style: 'thin', color: { rgb: 'C0C0C0' } };
+    const border = { top: thin, bottom: thin, left: thin, right: thin };
+    const fill = (rgb) => ({ fgColor: { rgb }, patternType: 'solid' });
+    const money = (valor, r, c, extra = {}) => {
+      const cell = { t: 'n', v: valor, s: { numFmt: '"$"#,##0.00', alignment: { horizontal: 'right' }, border, ...extra.s } };
+      ws[A1(r, c)] = cell;
+    };
 
     const titulo = `CONTROL DE PAGOS · ${nombreMes(mes).toUpperCase()}`;
+    ws[A1(fila, 0)] = { v: titulo, t: 's', s: { font: { bold: true, sz: 14, color: { rgb: 'FFFFFF' } }, fill: fill('F97316'), alignment: { horizontal: 'center', vertical: 'center' } } };
+    merges.push({ s: { r: fila, c: 0 }, e: { r: fila, c: totalCols - 1 } });
+    fila++;
 
-    // Cabecera de semanas (fila agrupada SEMANA N)
-    let filaSemanas = `${td('NO.')}${td('NOMBRE')}${td('CATEGORÍA')}`;
-    semanas.forEach((s) => {
-      filaSemanas += `<td colspan="5" style="background:#00A651;color:#fff;border:1px solid #008f45;font-weight:bold;text-align:center">SEMANA ${s.semana}</td>`;
+    ws[A1(fila, 0)] = { v: `Generado el ${new Date().toLocaleDateString('es-MX')}`, t: 's', s: { font: { sz: 9, color: { rgb: '666666' } }, alignment: { horizontal: 'center' } } };
+    merges.push({ s: { r: fila, c: 0 }, e: { r: fila, c: totalCols - 1 } });
+    fila++;
+
+    const stHeader = (txt) => ({ v: txt, t: 's', s: { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: fill('00A651'), alignment: { horizontal: 'center' }, border } });
+    ['NO.', 'NOMBRE', 'CATEGORÍA'].forEach((txt, c) => { ws[A1(fila, c)] = stHeader(txt); });
+    semanas.forEach((s, i) => {
+      const c0 = 3 + i * 5;
+      ws[A1(fila, c0)] = stHeader(`SEMANA ${s.semana}`);
+      merges.push({ s: { r: fila, c: c0 }, e: { r: fila, c: c0 + 4 } });
     });
+    fila++;
 
-    // Subcabecera MAR VIE SÁB COLEGIATURA ARBITRAJE x semana
-    let filaSub = `${td('')}${td('')}${td('')}`;
-    semanas.forEach(() => {
-      filaSub +=
-        '<td style="background:#E6F4EA;border:1px solid #ccc;font-weight:bold;text-align:center">MAR</td>' +
-        '<td style="background:#E6F4EA;border:1px solid #ccc;font-weight:bold;text-align:center">VIE</td>' +
-        '<td style="background:#E6F4EA;border:1px solid #ccc;font-weight:bold;text-align:center">SÁB</td>' +
-        '<td style="background:#E6F4EA;border:1px solid #ccc;font-weight:bold;text-align:center">COLEGIATURA</td>' +
-        '<td style="background:#E6F4EA;border:1px solid #ccc;font-weight:bold;text-align:center">ARBITRAJE</td>';
+    const stSub = (txt) => ({ v: txt, t: 's', s: { font: { bold: true }, fill: fill('E6F4EA'), alignment: { horizontal: 'center' }, border } });
+    for (let c = 0; c < 3; c++) ws[A1(fila, c)] = { v: '', t: 's', s: { border } };
+    semanas.forEach((_s, i) => {
+      const c0 = 3 + i * 5;
+      ws[A1(fila, c0)] = stSub('MAR');
+      ws[A1(fila, c0 + 1)] = stSub('VIE');
+      ws[A1(fila, c0 + 2)] = stSub('SÁB');
+      ws[A1(fila, c0 + 3)] = stSub('COLEGIATURA');
+      ws[A1(fila, c0 + 4)] = stSub('ARBITRAJE');
     });
+    fila++;
 
-    // Fila de fechas
-    let filaFechas = `${td('')}${td('')}${td('')}`;
-    semanas.forEach((s) => {
-      const f = (iso) => { const [, m, d] = iso.split('-'); return `${d}/${m}`; };
-      filaFechas +=
-        `${td(f(s.mar), ' style="border:1px solid #ccc;text-align:center"')}` +
-        `${td(f(s.vie), ' style="border:1px solid #ccc;text-align:center"')}` +
-        `${td(f(s.sab), ' style="border:1px solid #ccc;text-align:center"')}` +
-        `${td('', ' style="border:1px solid #ccc"')}${td('', ' style="border:1px solid #ccc"')}`;
+    const dia = (v) => ({ v, t: 's', s: { alignment: { horizontal: 'center' }, border } });
+    for (let c = 0; c < 3; c++) ws[A1(fila, c)] = { v: '', t: 's', s: { border } };
+    semanas.forEach((s, i) => {
+      const c0 = 3 + i * 5;
+      const d = (iso) => { const [, m, dd] = iso.split('-'); return `${dd}/${m}`; };
+      ws[A1(fila, c0)] = dia(d(s.mar));
+      ws[A1(fila, c0 + 1)] = dia(d(s.vie));
+      ws[A1(fila, c0 + 2)] = dia(d(s.sab));
+      ws[A1(fila, c0 + 3)] = { v: '', t: 's', s: { border } };
+      ws[A1(fila, c0 + 4)] = { v: '', t: 's', s: { border } };
     });
+    fila++;
 
-    // Filas de jugadores
-    let filas = '';
     data.jugadores.forEach((j, idx) => {
-      let f = `${td(idx + 1, ' style="border:1px solid #ccc;text-align:center"')}`;
-      f += `<td style="border:1px solid #ccc;font-weight:bold">${esc(j.nombre)}</td>`;
-      f += `<td style="border:1px solid #ccc;text-align:center${j.categoria ? '' : ''}">${esc(j.categoria || '—')}</td>`;
-      semanas.forEach((s) => {
+      ws[A1(fila, 0)] = { v: idx + 1, t: 'n', s: { alignment: { horizontal: 'center' }, border } };
+      ws[A1(fila, 1)] = { v: j.nombre, t: 's', s: { font: { bold: true }, border } };
+      ws[A1(fila, 2)] = { v: j.categoria || '—', t: 's', s: { alignment: { horizontal: 'center' }, border } };
+      semanas.forEach((s, i) => {
         const sc = j.semanas[s.semana].colegiatura;
         const sa = j.semanas[s.semana].arbitraje;
         const pagado = sc > 0 && sa > 0;
-        const est = pagado
-          ? 'background:#DFF5E6;color:#008f45;border:1px solid #ccc;font-weight:bold;text-align:center'
-          : 'background:#FDECEA;color:#B3261E;border:1px solid #ccc;font-weight:bold;text-align:center';
-        f += `<td colspan="3" style="${est}">${pagado ? 'PAGADO' : 'PENDIENTE'}</td>`;
-        f += `<td style="border:1px solid #ccc;text-align:right;mso-number-format:'\\"\\$\\"#,##0.00'">${sc > 0 ? sc.toFixed(2) : ''}</td>`;
-        f += `<td style="border:1px solid #ccc;text-align:right;mso-number-format:'\\"\\$\\"#,##0.00'">${sa > 0 ? sa.toFixed(2) : ''}</td>`;
+        const c0 = 3 + i * 5;
+        ws[A1(fila, c0)] = {
+          v: pagado ? 'PAGADO' : 'PENDIENTE',
+          t: 's',
+          s: {
+            font: { bold: true, color: { rgb: pagado ? '008F45' : 'B3261E' } },
+            fill: fill(pagado ? 'DFF5E6' : 'FDECEA'),
+            alignment: { horizontal: 'center' },
+            border,
+          },
+        };
+        merges.push({ s: { r: fila, c: c0 }, e: { r: fila, c: c0 + 2 } });
+        if (sc > 0) money(sc, fila, c0 + 3);
+        if (sa > 0) money(sa, fila, c0 + 4);
       });
-      filas += `<tr>${f}</tr>`;
+      fila++;
     });
 
-    // Totales por categoría
+    merges.push({ s: { r: fila, c: 0 }, e: { r: fila, c: totalCols - 1 } });
+    for (let c = 0; c < totalCols; c++) ws[A1(fila, c)] = { v: '', t: 's', s: { top: { style: 'medium', color: { rgb: '444444' } } } };
+    fila++;
+
+    const stLabel2 = (txt) => ({ v: txt, t: 's', s: { font: { bold: true }, fill: fill('F3F4F6'), border } });
+
     const cats = [...new Set(data.jugadores.map((j) => j.categoria).filter(Boolean))].sort(
       (a, b) => ORDEN_CATEGORIAS.indexOf(a) - ORDEN_CATEGORIAS.indexOf(b)
     );
-    let filasTot = '';
+
+    ws[A1(fila, 0)] = { v: 'TOTALES POR CATEGORÍA', t: 's', s: { font: { bold: true }, fill: fill('F3F4F6') } };
+    merges.push({ s: { r: fila, c: 0 }, e: { r: fila, c: totalCols - 1 } });
+    fila++;
+
     cats.forEach((cat) => {
       const jugs = data.jugadores.filter((j) => j.categoria === cat);
-      let f = `<td style="border:1px solid #ccc;font-weight:bold;background:#F3F4F6">${esc(cat)}</td>`;
-      f += '<td colspan="2" style="background:#F3F4F6;border:1px solid #ccc"></td>';
-      semanas.forEach((s) => {
+      ws[A1(fila, 0)] = stLabel2(cat);
+      merges.push({ s: { r: fila, c: 0 }, e: { r: fila, c: 2 } });
+      for (let c = 3; c < totalCols; c++) ws[A1(fila, c)] = { v: '', t: 's', s: { border } };
+      semanas.forEach((s, i) => {
         let tc = 0, ta = 0;
         jugs.forEach((j) => { tc += j.semanas[s.semana].colegiatura; ta += j.semanas[s.semana].arbitraje; });
-        f += '<td colspan="3" style="border:1px solid #ccc"></td>';
-        f += `<td style="border:1px solid #ccc;text-align:right;font-weight:bold;mso-number-format:'\\"\\$\\"#,##0.00'">${tc.toFixed(2)}</td>`;
-        f += `<td style="border:1px solid #ccc;text-align:right;font-weight:bold;mso-number-format:'\\"\\$\\"#,##0.00'">${ta.toFixed(2)}</td>`;
+        const c0 = 3 + i * 5;
+        money(tc, fila, c0 + 3, { s: { font: { bold: true } } });
+        money(ta, fila, c0 + 4, { s: { font: { bold: true } } });
       });
-      filasTot += `<tr>${f}</tr>`;
+      fila++;
     });
 
-    // Total general + resumen pagados
-    let fg = '<td style="border:1px solid #000;font-weight:bold;background:#00A651;color:#fff">TOTAL GENERAL</td>';
-    fg += '<td colspan="2" style="border:1px solid #000;background:#00A651"></td>';
-    let fp = '<td style="border:1px solid #ccc;font-weight:bold;background:#F3F4F6">PAGADOS (jugadores)</td>';
-    fp += '<td colspan="2" style="border:1px solid #ccc;background:#F3F4F6"></td>';
-    semanas.forEach((s) => {
+    ws[A1(fila, 0)] = { v: 'TOTAL GENERAL', t: 's', s: { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: fill('00A651'), border } };
+    merges.push({ s: { r: fila, c: 0 }, e: { r: fila, c: 2 } });
+    semanas.forEach((s, i) => {
       const t = data.totales[s.semana];
-      fg += '<td colspan="3" style="border:1px solid #000;background:#00A651"></td>';
-      fg += `<td style="border:1px solid #000;background:#00A651;color:#fff;font-weight:bold;text-align:right;mso-number-format:'\\"\\$\\"#,##0.00'">${t.colegiatura.toFixed(2)}</td>`;
-      fg += `<td style="border:1px solid #000;background:#00A651;color:#fff;font-weight:bold;text-align:right;mso-number-format:'\\"\\$\\"#,##0.00'">${t.arbitraje.toFixed(2)}</td>`;
-      fp += '<td colspan="3" style="border:1px solid #ccc;background:#F3F4F6"></td>';
-      fp += `<td colspan="2" style="border:1px solid #ccc;background:#F3F4F6;text-align:center;font-weight:bold">${t.pagados} de ${t.pagados + t.pendientes}</td>`;
+      const c0 = 3 + i * 5;
+      for (let c = c0; c < c0 + 3; c++) ws[A1(fila, c)] = { v: '', t: 's', s: { border, fill: fill('00A651') } };
+      money(t.colegiatura, fila, c0 + 3, { s: { font: { bold: true, color: { rgb: 'FFFFFF' } } } });
+      money(t.arbitraje, fila, c0 + 4, { s: { font: { bold: true, color: { rgb: 'FFFFFF' } } } });
     });
+    fila++;
 
-    const html =
-      '<html><head><meta charset="utf-8"/></head><body>' +
-      `<table border="0" cellspacing="0" cellpadding="4" style="border-collapse:collapse;font-family:Arial">` +
-      `<tr><td colspan="${totalCols}" style="background:#F97316;color:#fff;font-size:16px;font-weight:bold;text-align:center;padding:8px">${titulo}</td></tr>` +
-      `<tr><td colspan="${totalCols}" style="color:#666;font-size:11px;text-align:center;padding:4px">Generado el ${new Date().toLocaleDateString('es-MX')} · ${esc(nombreMes(mes))}</td></tr>` +
-      `<tr>${filaSemanas}</tr>` +
-      `<tr>${filaSub}</tr>` +
-      `<tr>${filaFechas}</tr>` +
-      filas +
-      `<tr><td colspan="${totalCols}" style="border-top:2px solid #000">&nbsp;</td></tr>` +
-      `<tr><td colspan="${totalCols}" style="font-weight:bold;background:#F3F4F6;padding:4px">TOTALES POR CATEGORÍA</td></tr>` +
-      filasTot +
-      `<tr>${fg}</tr>` +
-      `<tr>${fp}</tr>` +
-      '</table></body></html>';
+    ws[A1(fila, 0)] = { v: 'PAGADOS (jugadores)', t: 's', s: { font: { bold: true }, fill: fill('F3F4F6'), border } };
+    merges.push({ s: { r: fila, c: 0 }, e: { r: fila, c: 2 } });
+    semanas.forEach((s, i) => {
+      const t = data.totales[s.semana];
+      const c0 = 3 + i * 5;
+      for (let c = c0; c < c0 + 3; c++) ws[A1(fila, c)] = { v: '', t: 's', s: { border } };
+      ws[A1(fila, c0 + 3)] = { v: `${t.pagados} de ${t.pagados + t.pendientes}`, t: 's', s: { font: { bold: true }, alignment: { horizontal: 'center' }, border, fill: fill('F3F4F6') } };
+      merges.push({ s: { r: fila, c: c0 + 3 }, e: { r: fila, c: c0 + 4 } });
+    });
+    fila++;
 
-    const blob = new Blob(['\ufeff', html], { type: 'application/vnd.ms-excel;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `control-pagos-${mes}.xls`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    ws['!merges'] = merges;
+    ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: fila - 1, c: totalCols - 1 } });
+    ws['!cols'] = [{ wch: 5 }, { wch: 34 }, { wch: 11 }];
+    semanas.forEach(() => { ws['!cols'].push({ wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 14 }, { wch: 14 }); });
+    ws['!rows'] = [{ hpt: 24 }, { hpt: 14 }];
+    ws['!freeze'] = { xSplit: 3, ySplit: 5 };
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Control de Pagos');
+    XLSX.writeFile(wb, `control-pagos-${mes}.xlsx`);
   };
 
   const abrirModal = (opciones) => {
