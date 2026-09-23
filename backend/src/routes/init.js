@@ -1,5 +1,6 @@
 import express from "express";
 import { query } from "../config/db.js";
+import { mesSemanaDeFecha, fechaToISO } from "../utils/semanas.js";
 
 const router = express.Router();
 
@@ -38,6 +39,9 @@ router.post("/", async (req, res) => {
         monto DECIMAL(10, 2) NOT NULL,
         concepto VARCHAR(100) NOT NULL,
         metodo_pago VARCHAR(50) NOT NULL,
+        mes VARCHAR(7),
+        semana INTEGER,
+        tipo VARCHAR(20),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -145,6 +149,60 @@ router.post("/", async (req, res) => {
     console.error("Error completo:", err);
     res.status(500).json({
       error: "Error al inicializar la base de datos",
+      details: err.message,
+    });
+  }
+});
+
+// Migración: agrega mes/semana/tipo a pagos y asigna las semanas a los pagos existentes
+router.post("/semanas", async (req, res) => {
+  try {
+    await query(`ALTER TABLE pagos ADD COLUMN IF NOT EXISTS mes VARCHAR(7)`);
+    await query(`ALTER TABLE pagos ADD COLUMN IF NOT EXISTS semana INTEGER`);
+    await query(`ALTER TABLE pagos ADD COLUMN IF NOT EXISTS tipo VARCHAR(20)`);
+
+    // Backfill colegiatura: concepto "Semana N"
+    const semanasResult = await query(
+      `SELECT id, concepto, fecha FROM pagos WHERE concepto LIKE 'Semana %' AND tipo IS NULL`
+    );
+    let colegiaturas = 0;
+    for (const p of semanasResult.rows) {
+      const match = /Semana\s+(\d)/i.exec(String(p.concepto).trim());
+      if (!match) continue;
+      const semana = parseInt(match[1], 10);
+      if (!semana || semana < 1 || semana > 5) continue;
+      const iso = fechaToISO(p.fecha);
+      await query(
+        `UPDATE pagos SET tipo = 'colegiatura', mes = $1, semana = $2 WHERE id = $3`,
+        [iso.slice(0, 7), semana, p.id]
+      );
+      colegiaturas++;
+    }
+
+    // Backfill arbitraje: concepto "Arbitraje"
+    const arbitrajeResult = await query(
+      `SELECT id, fecha FROM pagos WHERE LOWER(concepto) LIKE '%arbitraje%' AND tipo IS NULL`
+    );
+    let arbitrajes = 0;
+    for (const p of arbitrajeResult.rows) {
+      const iso = fechaToISO(p.fecha);
+      const { mes, semana } = mesSemanaDeFecha(iso);
+      await query(
+        `UPDATE pagos SET tipo = 'arbitraje', mes = $1, semana = $2 WHERE id = $3`,
+        [mes, semana, p.id]
+      );
+      arbitrajes++;
+    }
+
+    res.json({
+      message: "Semanas asignadas a pagos existentes",
+      colegiaturas,
+      arbitrajes,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: "Error al asignar semanas",
       details: err.message,
     });
   }

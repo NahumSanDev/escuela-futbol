@@ -1,8 +1,111 @@
 import express from 'express';
 import { query } from '../config/db.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
+import { semanasDelMes } from '../utils/semanas.js';
 
 const router = express.Router();
+
+const TIPOS = ['colegiatura', 'arbitraje'];
+const ORDEN_CATEGORIAS = ['PONY', 'SUB 9', 'SUB 11', 'SUB 13'];
+
+// Padrón de pagos por mes (control): semanas + jugadores + totales por semana
+router.get('/control', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { mes } = req.query;
+    if (!mes || !/^\d{4}-\d{2}$/.test(mes)) {
+      return res.status(400).json({ error: 'Mes inválido (YYYY-MM)' });
+    }
+    const [year, month] = mes.split('-').map(Number);
+    const semanas = semanasDelMes(year, month);
+
+    const familiasResult = await query(
+      'SELECT id, nombre_jugador FROM familias ORDER BY nombre_jugador'
+    );
+
+    const catResult = await query(
+      `SELECT DISTINCT ON (p.jugador_id) p.jugador_id, p.categoria
+       FROM pagos p
+       WHERE p.categoria IS NOT NULL AND p.categoria <> ''
+       ORDER BY p.jugador_id, p.fecha DESC NULLS LAST, p.id DESC`
+    );
+    const categoriaPorJugador = new Map(catResult.rows.map(r => [r.jugador_id, r.categoria]));
+
+    const pagosResult = await query(
+      `SELECT p.id, p.jugador_id, p.semana, p.tipo, p.monto,
+              to_char(p.fecha, 'YYYY-MM-DD') AS fecha, p.metodo_pago, p.concepto
+       FROM pagos p
+       WHERE p.mes = $1 AND p.tipo IN ('colegiatura', 'arbitraje')
+       ORDER BY p.id`,
+      [mes]
+    );
+
+    const jugadores = familiasResult.rows.map(f => {
+      const semanasData = {};
+      const pagosJugador = [];
+      for (const semana of semanas) {
+        semanasData[semana.semana] = { colegiatura: 0, arbitraje: 0 };
+      }
+      return {
+        jugador_id: f.id,
+        nombre: f.nombre_jugador,
+        categoria: categoriaPorJugador.get(f.id) || null,
+        semanas: semanasData,
+        pagos: pagosJugador,
+      };
+    });
+
+    const indexPorJugador = new Map(jugadores.map(j => [j.jugador_id, j]));
+
+    for (const p of pagosResult.rows) {
+      const jugador = indexPorJugador.get(p.jugador_id);
+      if (!jugador) continue;
+      if (p.semana && jugador.semanas[p.semana]) {
+        jugador.semanas[p.semana][p.tipo] += Number(p.monto) || 0;
+      }
+      jugador.pagos.push({
+        id: p.id,
+        tipo: p.tipo,
+        semana: p.semana,
+        monto: Number(p.monto),
+        fecha: p.fecha,
+        metodo_pago: p.metodo_pago,
+        concepto: p.concepto,
+      });
+    }
+
+    // Totales por semana
+    const totales = {};
+    for (const semana of semanas) {
+      const sem = semana.semana;
+      let colegiatura = 0;
+      let arbitraje = 0;
+      let pagados = 0;
+      let pendientes = 0;
+      for (const j of jugadores) {
+        const sc = j.semanas[sem].colegiatura;
+        const sa = j.semanas[sem].arbitraje;
+        colegiatura += sc;
+        arbitraje += sa;
+        if (sc > 0 && sa > 0) pagados++;
+        else pendientes++;
+      }
+      totales[sem] = { colegiatura, arbitraje, pagados, pendientes };
+    }
+
+    // Ordenar jugadores por categoría (PONY, SUB 9, SUB 11, SUB 13) y luego por nombre
+    jugadores.sort((a, b) => {
+      const ca = ORDEN_CATEGORIAS.indexOf(a.categoria);
+      const cb = ORDEN_CATEGORIAS.indexOf(b.categoria);
+      if (ca !== cb) return (ca === -1 ? 99 : ca) - (cb === -1 ? 99 : cb);
+      return a.nombre.localeCompare(b.nombre, 'es');
+    });
+
+    res.json({ mes, semanas, jugadores, totales });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+});
 
 router.get('/', authenticateToken, requireAdmin, async (req, res) => {
   try {
@@ -22,7 +125,7 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
       params
     );
 
-    let queryText = `SELECT p.id, p.jugador_id, to_char(p.fecha, 'YYYY-MM-DD') AS fecha, p.monto, p.concepto, p.metodo_pago, p.categoria, p.created_at, f.nombre_jugador 
+    let queryText = `SELECT p.id, p.jugador_id, to_char(p.fecha, 'YYYY-MM-DD') AS fecha, p.monto, p.concepto, p.metodo_pago, p.categoria, p.mes, p.semana, p.tipo, p.created_at, f.nombre_jugador 
        FROM pagos p 
        LEFT JOIN familias f ON p.jugador_id = f.id 
        ${whereClause}
@@ -52,7 +155,7 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
 router.get('/mios', authenticateToken, async (req, res) => {
   try {
     const result = await query(
-      `SELECT p.id, p.jugador_id, to_char(p.fecha, 'YYYY-MM-DD') AS fecha, p.monto, p.concepto, p.metodo_pago, p.categoria, p.created_at, f.nombre_jugador
+      `SELECT p.id, p.jugador_id, to_char(p.fecha, 'YYYY-MM-DD') AS fecha, p.monto, p.concepto, p.metodo_pago, p.categoria, p.mes, p.semana, p.tipo, p.created_at, f.nombre_jugador
        FROM pagos p
        JOIN familias f ON p.jugador_id = f.id
        WHERE f.usuario_id = $1
@@ -68,12 +171,14 @@ router.get('/mios', authenticateToken, async (req, res) => {
 
 router.post('/', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { jugador_id, fecha, monto, concepto, metodo_pago, categoria } = req.body;
+    const { jugador_id, fecha, monto, concepto, metodo_pago, categoria, mes, semana, tipo } = req.body;
+
+    const tipofinal = TIPOS.includes(tipo) ? tipo : null;
 
     const result = await query(
-      `INSERT INTO pagos (jugador_id, fecha, monto, concepto, metodo_pago, categoria) 
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [jugador_id, fecha, monto, concepto, metodo_pago, categoria]
+      `INSERT INTO pagos (jugador_id, fecha, monto, concepto, metodo_pago, categoria, mes, semana, tipo) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+      [jugador_id, fecha, monto, concepto, metodo_pago, categoria, mes || null, semana || null, tipofinal]
     );
 
     res.status(201).json(result.rows[0]);
@@ -86,12 +191,14 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { jugador_id, fecha, monto, concepto, metodo_pago, categoria } = req.body;
+    const { jugador_id, fecha, monto, concepto, metodo_pago, categoria, mes, semana, tipo } = req.body;
+
+    const tipofinal = TIPOS.includes(tipo) ? tipo : null;
 
     const result = await query(
-      `UPDATE pagos SET jugador_id = $1, fecha = $2, monto = $3, concepto = $4, metodo_pago = $5, categoria = $6 
-       WHERE id = $7 RETURNING *`,
-      [jugador_id, fecha, monto, concepto, metodo_pago, categoria, id]
+      `UPDATE pagos SET jugador_id = $1, fecha = $2, monto = $3, concepto = $4, metodo_pago = $5, categoria = $6, mes = $7, semana = $8, tipo = $9
+       WHERE id = $10 RETURNING *`,
+      [jugador_id, fecha, monto, concepto, metodo_pago, categoria, mes || null, semana || null, tipofinal, id]
     );
 
     res.json(result.rows[0]);
