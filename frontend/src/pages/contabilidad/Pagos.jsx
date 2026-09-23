@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { FiPlus, FiDownload, FiEdit2, FiTrash2, FiFileText, FiArrowUp, FiArrowDown } from 'react-icons/fi';
 import { pagosService, familiasService } from '../../services/api';
 import { formatCurrency, formatDate } from '../../utils/formatters';
+import { obtenerSemanasMes, mesActual, rangoSemana } from '../../utils/semanas';
 import ReciboPago from '../../components/ReciboPago';
 import * as XLSX from 'xlsx';
 
 const CONCEPTOS = ['Semana', 'Arbitraje', 'Uniforme', 'Torneo', 'Vacaciones', 'Otro'];
-const SEMANAS = ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4', 'Semana 5'];
 const METODOS = ['Efectivo', 'Transferencia', 'Tarjeta', 'Bizum'];
 const CATEGORIAS = ['PONY', 'SUB 9', 'SUB 11', 'SUB 13'];
 
@@ -33,8 +33,13 @@ export default function Pagos() {
   });
   const [otroConcepto, setOtroConcepto] = useState('');
   const [semanaPago, setSemanaPago] = useState('');
+  const [mesPago, setMesPago] = useState(mesActual());
   const [reciboPago, setReciboPago] = useState(null);
   const [editandoPago, setEditandoPago] = useState(null);
+
+  const semanasDelMes = obtenerSemanasMes(mesPago);
+  const SEMANAS = semanasDelMes.map((s) => `Semana ${s.semana}`);
+  const conceptoSemanal = nuevoPago.concepto === 'Semana' || nuevoPago.concepto === 'Arbitraje';
 
   useEffect(() => {
     fetchData();
@@ -114,6 +119,7 @@ export default function Pagos() {
     setNuevoPago({ jugador_id: '', fecha: '', monto: '', concepto: '', metodo_pago: '', categoria: '' });
     setOtroConcepto('');
     setSemanaPago('');
+    setMesPago(mesActual());
     setShowModal(true);
   };
 
@@ -129,7 +135,12 @@ export default function Pagos() {
       metodo_pago: pago.metodo_pago || pago.metodo || '',
       categoria: pago.categoria || '',
     });
-    setSemanaPago(esSemana ? pago.concepto : '');
+    if (pago.mes) {
+      setMesPago(pago.mes);
+    } else if (pago.fecha) {
+      setMesPago(String(pago.fecha).slice(0, 7));
+    }
+    setSemanaPago(esSemana || pago.concepto === 'Arbitraje' ? (pago.semana ? String(pago.semana) : '') : '');
     setOtroConcepto(conceptoEsConfigurado ? '' : pago.concepto || '');
     setShowModal(true);
   };
@@ -143,14 +154,27 @@ export default function Pagos() {
     e.preventDefault();
     try {
       let conceptoFinal = nuevoPago.concepto;
+      let mes = nuevoPago.mes;
+      let semana = nuevoPago.semana;
+      let tipo = null;
       if (nuevoPago.concepto === 'Otro') {
         conceptoFinal = otroConcepto || 'Otro';
       } else if (nuevoPago.concepto === 'Semana') {
-        conceptoFinal = semanaPago || 'Semana';
+        conceptoFinal = semanaPago ? `Semana ${semanaPago}` : 'Semana';
+        mes = mesPago;
+        semana = semanaPago ? parseInt(semanaPago, 10) : null;
+        tipo = 'colegiatura';
+      } else if (nuevoPago.concepto === 'Arbitraje') {
+        mes = mesPago;
+        semana = semanaPago ? parseInt(semanaPago, 10) : null;
+        tipo = 'arbitraje';
       }
       const pagoData = {
         ...nuevoPago,
         concepto: conceptoFinal,
+        mes,
+        semana,
+        tipo,
       };
       if (editandoPago) {
         await pagosService.update(editandoPago.id, pagoData);
@@ -414,21 +438,35 @@ export default function Pagos() {
                   ))}
                 </select>
               </div>
-              {nuevoPago.concepto === 'Semana' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Semana</label>
-                  <select
-                    value={semanaPago}
-                    onChange={(e) => setSemanaPago(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    required
-                  >
-                    <option value="">Seleccionar semana</option>
-                    {SEMANAS.map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                </div>
+              {conceptoSemanal && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Mes</label>
+                    <input
+                      type="month"
+                      value={mesPago}
+                      onChange={(e) => setMesPago(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Semana</label>
+                    <select
+                      value={semanaPago}
+                      onChange={(e) => setSemanaPago(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      required
+                    >
+                      <option value="">Seleccionar semana</option>
+                      {semanasDelMes.map((s) => (
+                        <option key={s.semana} value={s.semana}>
+                          Semana {s.semana} · {rangoSemana(s.mar, s.sab)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </>
               )}
               {nuevoPago.concepto === 'Otro' && (
                 <div>

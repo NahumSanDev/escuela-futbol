@@ -7,6 +7,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import Pagos from "./pages/contabilidad/Pagos";
+import ControlPagos from "./pages/contabilidad/ControlPagos";
 import MisPagos from "./pages/pagos/MisPagos";
 import Familias from "./pages/admin/Familias";
 import Partidos from "./pages/partidos/Partidos";
@@ -61,6 +62,14 @@ function Router() {
           element={
             <PrivateRoute requireAdmin>
               <Pagos />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="control-pagos"
+          element={
+            <PrivateRoute requireAdmin>
+              <ControlPagos />
             </PrivateRoute>
           }
         />

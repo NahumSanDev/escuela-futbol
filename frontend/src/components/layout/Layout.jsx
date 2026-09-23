@@ -11,6 +11,7 @@ import {
   FiLogOut,
   FiMenu,
   FiX,
+  FiGrid,
 } from "react-icons/fi";
 import { useState } from "react";
 import NotificationBell from "./NotificationBell";
@@ -28,6 +29,7 @@ export default function Layout() {
   const navItems = [
     { to: "/", icon: FiHome, label: "Inicio", exact: true },
     ...(isAdmin ? [{ to: "/pagos", icon: FiDollarSign, label: "Pagos" }] : []),
+    ...(isAdmin ? [{ to: "/control-pagos", icon: FiGrid, label: "Control Pagos" }] : []),
     ...(isAdmin ? [{ to: "/familias", icon: FiUser, label: "Familias" }] : []),
     ...(!isAdmin ? [{ to: "/mis-pagos", icon: FiDollarSign, label: "Mis Pagos" }] : []),
     { to: "/partidos", icon: FiCalendar, label: "Partidos" },

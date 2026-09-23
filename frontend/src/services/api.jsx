@@ -67,6 +67,7 @@ export const authService = {
 export const pagosService = {
   getAll: (page = 1, limit = 10000) => fetchAPI(`/pagos?page=${page}&limit=${limit}`),
   getAllSinLimite: () => fetchAPI("/pagos"),
+  getControl: (mes) => fetchAPI(`/pagos/control?mes=${mes}`),
   create: (data) =>
     fetchAPI("/pagos", { method: "POST", body: JSON.stringify(data) }),
   update: (id, data) =>
