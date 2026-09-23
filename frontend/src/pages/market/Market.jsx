@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { FiShoppingCart, FiPlus, FiEdit2, FiTrash2, FiX } from 'react-icons/fi';
+import { useState, useEffect, useRef } from 'react';
+import { FiShoppingCart, FiPlus, FiEdit2, FiTrash2, FiX, FiUpload, FiImage } from 'react-icons/fi';
 import { productosService } from '../../services/api';
 import { formatCurrency } from '../../utils/formatters';
 import { useAuth } from '../../context/AuthContext';
@@ -21,10 +21,49 @@ export default function Market() {
   });
   const [editProducto, setEditProducto] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [espacio, setEspacio] = useState({ bytes: 0, limiteBytes: 0, limiteMB: 30, cantidad: 0 });
+  const [subiendoImg, setSubiendoImg] = useState(false);
+  const fileInputRef = useRef(null);
+  const fileInputEditRef = useRef(null);
+
+  const formatBytes = (b) => {
+    if (!b) return '0 MB';
+    const mb = b / (1024 * 1024);
+    return mb >= 1 ? `${mb.toFixed(1)} MB` : `${Math.round(b / 1024)} KB`;
+  };
 
   useEffect(() => {
     fetchData();
+    if (isAdmin) cargarEspacio();
   }, []);
+
+  const cargarEspacio = async () => {
+    try {
+      setEspacio(await productosService.getEspacio());
+    } catch (err) {
+      console.error('Error al cargar espacio', err);
+    }
+  };
+
+  const handleUpload = async (e, esEdit = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSubiendoImg(true);
+    try {
+      const res = await productosService.uploadImagen(file);
+      if (esEdit) {
+        setEditProducto({ ...editProducto, imagen_url: res.imagen_url });
+      } else {
+        setNuevoProducto({ ...nuevoProducto, imagen_url: res.imagen_url });
+      }
+      setEspacio(res.espacio || espacio);
+    } catch (err) {
+      alert(err.message || 'Error al subir imagen');
+    } finally {
+      setSubiendoImg(false);
+      if (e.target) e.target.value = '';
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -80,15 +119,28 @@ export default function Market() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h1 className="text-2xl font-bold text-gray-800">Fénix Market</h1>
-        {isAdmin && (
-          <button 
-            onClick={() => setShowModal(true)}
-            className="flex items-center space-x-2 bg-[#00A651] text-white px-4 py-2 rounded-lg hover:bg-[#008f45]"
-          >
-            <FiPlus size={18} />
-            <span>Agregar Producto</span>
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {isAdmin && (
+            <div className="text-xs text-gray-500 bg-white rounded-lg px-3 py-2 shadow-sm" title="Almacenamiento de imágenes de productos">
+              📸 {formatBytes(espacio.bytes)} / {formatBytes(espacio.limiteBytes)}
+              <div className="w-28 h-1.5 bg-gray-200 rounded-full overflow-hidden mt-1">
+                <div
+                  className={`h-full rounded-full ${espacio.bytes / espacio.limiteBytes > 0.85 ? 'bg-red-500' : 'bg-[#00A651]'}`}
+                  style={{ width: `${Math.min(100, (espacio.bytes / espacio.limiteBytes) * 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
+          {isAdmin && (
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center space-x-2 bg-[#00A651] text-white px-4 py-2 rounded-lg hover:bg-[#008f45]"
+            >
+              <FiPlus size={18} />
+              <span>Agregar Producto</span>
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -193,14 +245,36 @@ export default function Market() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">URL de imagen</label>
-                <input
-                  type="url"
-                  value={nuevoProducto.imagen_url}
-                  onChange={(e) => setNuevoProducto({ ...nuevoProducto, imagen_url: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  placeholder="https://ejemplo.com/imagen.jpg"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Imagen del producto</label>
+                <div className="flex items-center gap-3">
+                  <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center border border-gray-200 shrink-0">
+                    {nuevoProducto.imagen_url ? (
+                      <img src={nuevoProducto.imagen_url} alt="Vista previa" className="w-full h-full object-cover" />
+                    ) : (
+                      <FiImage className="text-gray-400" size={24} />
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={subiendoImg}
+                      className="w-full flex items-center justify-center space-x-2 border-2 border-dashed border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600 hover:border-[#00A651] hover:text-[#00A651] disabled:opacity-50"
+                    >
+                      <FiUpload size={16} />
+                      <span>{subiendoImg ? 'Optimizando...' : 'Subir imagen'}</span>
+                    </button>
+                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleUpload(e, false)} />
+                    <input
+                      type="url"
+                      value={nuevoProducto.imagen_url || ''}
+                      onChange={(e) => setNuevoProducto({ ...nuevoProducto, imagen_url: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      placeholder="...o pega una URL de imagen"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Se optimiza automáticamente a WebP (máx 800px, calidad 80) para ocupar el menor espacio.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
@@ -273,14 +347,36 @@ export default function Market() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">URL de imagen</label>
-                <input
-                  type="url"
-                  value={editProducto.imagen_url || ''}
-                  onChange={(e) => setEditProducto({ ...editProducto, imagen_url: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  placeholder="https://ejemplo.com/imagen.jpg"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Imagen del producto</label>
+                <div className="flex items-center gap-3">
+                  <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center border border-gray-200 shrink-0">
+                    {editProducto.imagen_url ? (
+                      <img src={editProducto.imagen_url} alt="Vista previa" className="w-full h-full object-cover" />
+                    ) : (
+                      <FiImage className="text-gray-400" size={24} />
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputEditRef.current?.click()}
+                      disabled={subiendoImg}
+                      className="w-full flex items-center justify-center space-x-2 border-2 border-dashed border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600 hover:border-[#00A651] hover:text-[#00A651] disabled:opacity-50"
+                    >
+                      <FiUpload size={16} />
+                      <span>{subiendoImg ? 'Optimizando...' : 'Subir imagen'}</span>
+                    </button>
+                    <input ref={fileInputEditRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleUpload(e, true)} />
+                    <input
+                      type="url"
+                      value={editProducto.imagen_url || ''}
+                      onChange={(e) => setEditProducto({ ...editProducto, imagen_url: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      placeholder="...o pega una URL de imagen"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Se optimiza automáticamente a WebP (máx 800px, calidad 80) para ocupar el menor espacio.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>

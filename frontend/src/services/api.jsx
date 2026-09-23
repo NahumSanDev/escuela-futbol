@@ -110,6 +110,22 @@ export const productosService = {
   update: (id, data) =>
     fetchAPI(`/productos/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   delete: (id) => fetchAPI(`/productos/${id}`, { method: "DELETE" }),
+  getEspacio: () => fetchAPI("/productos/espacio"),
+  uploadImagen: async (file) => {
+    const token = localStorage.getItem("cefor_token");
+    const formData = new FormData();
+    formData.append("imagen", file);
+    const response = await fetch(`${API_URL}/productos/upload`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "Error al subir imagen");
+    }
+    return data;
+  },
 };
 
 export const familiasService = {
