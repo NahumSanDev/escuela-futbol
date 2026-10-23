@@ -24,7 +24,7 @@ export default function Market() {
   });
   const [editProducto, setEditProducto] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [espacio, setEspacio] = useState({ bytes: 0, pdf_bytes: 0, total_bytes: 0, limiteBytes: 0, limiteMB: 100, cantidad: 0 });
+  const [espacio, setEspacio] = useState({ bytes: 0, pdf_bytes: 0, total_bytes: 0, limiteBytes: 0, limiteMB: 2048, cantidad: 0 });
   const [subiendoImg, setSubiendoImg] = useState(false);
   const [subiendoPdf, setSubiendoPdf] = useState(false);
   const fileInputRef = useRef(null);
@@ -34,6 +34,8 @@ export default function Market() {
 
   const formatBytes = (b) => {
     if (!b) return '0 MB';
+    const gb = b / (1024 * 1024 * 1024);
+    if (gb >= 1) return `${gb.toFixed(1)} GB`;
     const mb = b / (1024 * 1024);
     return mb >= 1 ? `${mb.toFixed(1)} MB` : `${Math.round(b / 1024)} KB`;
   };
