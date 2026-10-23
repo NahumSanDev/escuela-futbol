@@ -9,7 +9,7 @@ const router = express.Router();
 
 const MAX_IMAGEN_MB = 5; // límite por archivo cargado (original)
 const MAX_PDF_MB = 10; // límite por PDF cargado (original)
-const LIMITE_IMAGENES_MB = Number(process.env.LIMITE_IMAGENES_MB || 30); // límite total de imágenes de Market (30MB por defecto, acorde a plan base Railway)
+const LIMITE_IMAGENES_MB = Number(process.env.LIMITE_IMAGENES_MB || 100); // límite total de imágenes y PDFs de Market (100MB por defecto; variable LIMITE_IMAGENES_MB)
 const ANCHO_MAX = 800; // px máximo de ancho
 
 const upload = multer({

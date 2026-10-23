@@ -24,7 +24,7 @@ export default function Market() {
   });
   const [editProducto, setEditProducto] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [espacio, setEspacio] = useState({ bytes: 0, pdf_bytes: 0, total_bytes: 0, limiteBytes: 0, limiteMB: 30, cantidad: 0 });
+  const [espacio, setEspacio] = useState({ bytes: 0, pdf_bytes: 0, total_bytes: 0, limiteBytes: 0, limiteMB: 100, cantidad: 0 });
   const [subiendoImg, setSubiendoImg] = useState(false);
   const [subiendoPdf, setSubiendoPdf] = useState(false);
   const fileInputRef = useRef(null);
