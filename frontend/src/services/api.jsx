@@ -127,6 +127,21 @@ export const productosService = {
     }
     return data;
   },
+  uploadPDF: async (file) => {
+    const token = localStorage.getItem("cefor_token");
+    const formData = new FormData();
+    formData.append("pdf", file);
+    const response = await fetch(`${API_URL}/productos/upload-pdf`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "Error al subir PDF");
+    }
+    return data;
+  },
 };
 
 export const familiasService = {

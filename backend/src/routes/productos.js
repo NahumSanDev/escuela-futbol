@@ -8,6 +8,7 @@ import { crearNotificacion } from './notificaciones.js';
 const router = express.Router();
 
 const MAX_IMAGEN_MB = 5; // límite por archivo cargado (original)
+const MAX_PDF_MB = 10; // límite por PDF cargado (original)
 const LIMITE_IMAGENES_MB = Number(process.env.LIMITE_IMAGENES_MB || 30); // límite total de imágenes de Market (30MB por defecto, acorde a plan base Railway)
 const ANCHO_MAX = 800; // px máximo de ancho
 
@@ -23,14 +24,30 @@ const upload = multer({
   },
 });
 
+const uploadPdf = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_PDF_MB * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype !== 'application/pdf') {
+      return cb(new Error('Solo se permiten archivos PDF'));
+    }
+    cb(null, true);
+  },
+});
+
 async function espacioImagenesUsado() {
   const result = await query(
     `SELECT COALESCE(SUM(LENGTH(imagen_url)), 0)::bigint AS bytes,
+            COALESCE(SUM(LENGTH(pdf_url)), 0)::bigint AS pdf_bytes,
             COUNT(CASE WHEN imagen_url IS NOT NULL THEN 1 END)::int AS cantidad
      FROM productos`
   );
+  const bytes = Number(result.rows[0].bytes);
+  const pdfBytes = Number(result.rows[0].pdf_bytes);
   return {
-    bytes: Number(result.rows[0].bytes),
+    bytes,
+    pdf_bytes: pdfBytes,
+    total_bytes: bytes + pdfBytes,
     cantidad: result.rows[0].cantidad,
     limiteBytes: LIMITE_IMAGENES_MB * 1024 * 1024,
     limiteMB: LIMITE_IMAGENES_MB,
@@ -62,7 +79,7 @@ router.post('/upload', authenticateToken, requireAdmin, upload.single('imagen'),
     const bufferOptimizado = await imagen.getBuffer('image/jpeg', { quality: 75 });
 
     const nuevoBytes = bufferOptimizado.length;
-    if (espacio.bytes + nuevoBytes > espacio.limiteBytes) {
+    if (espacio.total_bytes + nuevoBytes > espacio.limiteBytes) {
       return res.status(400).json({
         error: `Límite de almacenamiento alcanzado (${espacio.limiteMB} MB). Libera espacio eliminando imágenes de productos.`,
         espacio,
@@ -74,12 +91,49 @@ router.post('/upload', authenticateToken, requireAdmin, upload.single('imagen'),
     res.status(201).json({
       imagen_url: dataUri,
       bytes: nuevoBytes,
-      espacio: { ...espacio, bytes: espacio.bytes + nuevoBytes },
+      espacio: { ...espacio, bytes: espacio.bytes + nuevoBytes, total_bytes: espacio.total_bytes + nuevoBytes },
     });
   } catch (err) {
     console.error(err);
     res.status(err.message === 'Formato de imagen no válido' ? 400 : 500).json({
       error: err.message === 'Formato de imagen no válido' ? err.message : 'Error al procesar la imagen',
+    });
+  }
+});
+
+router.post('/upload-pdf', authenticateToken, requireAdmin, uploadPdf.single('pdf'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se recibió ningún PDF' });
+    }
+
+    // Validar cabecera %PDF del contenido real (no solo el mimetype declarado)
+    const inicio = req.file.buffer.slice(0, 4).toString('latin1');
+    if (inicio !== '%PDF') {
+      return res.status(400).json({ error: 'El archivo no es un PDF válido' });
+    }
+
+    const espacio = await espacioImagenesUsado();
+    const nuevoBytes = req.file.buffer.length;
+    if (espacio.total_bytes + nuevoBytes > espacio.limiteBytes) {
+      return res.status(400).json({
+        error: `Límite de almacenamiento alcanzado (${espacio.limiteMB} MB). Libera espacio eliminando archivos de productos.`,
+        espacio,
+      });
+    }
+
+    const dataUri = `data:application/pdf;base64,${req.file.buffer.toString('base64')}`;
+
+    res.status(201).json({
+      pdf_url: dataUri,
+      bytes: nuevoBytes,
+      espacio: { ...espacio, pdf_bytes: espacio.pdf_bytes + nuevoBytes, total_bytes: espacio.total_bytes + nuevoBytes },
+    });
+  } catch (err) {
+    console.error(err);
+    const msg = err.message || '';
+    res.status(msg.includes('PDF') ? 400 : 500).json({
+      error: msg.includes('PDF') ? msg : 'Error al procesar el PDF',
     });
   }
 });
@@ -119,12 +173,12 @@ router.get('/categorias', authenticateToken, async (req, res) => {
 
 router.post('/', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { nombre, descripcion, precio, categoria, imagen_url } = req.body;
+    const { nombre, descripcion, precio, categoria, imagen_url, pdf_url } = req.body;
 
     const result = await query(
-      `INSERT INTO productos (nombre, descripcion, precio, categoria, imagen_url) 
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [nombre, descripcion, precio, categoria, imagen_url]
+      `INSERT INTO productos (nombre, descripcion, precio, categoria, imagen_url, pdf_url) 
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [nombre, descripcion, precio, categoria, imagen_url, pdf_url]
     );
 
     await crearNotificacion({
@@ -145,13 +199,13 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, descripcion, precio, categoria, imagen_url, activo } = req.body;
+    const { nombre, descripcion, precio, categoria, imagen_url, pdf_url, activo } = req.body;
 
     const result = await query(
       `UPDATE productos 
-       SET nombre = $1, descripcion = $2, precio = $3, categoria = $4, imagen_url = $5, activo = $6
-       WHERE id = $7 RETURNING *`,
-      [nombre, descripcion, precio, categoria, imagen_url, activo, id]
+       SET nombre = $1, descripcion = $2, precio = $3, categoria = $4, imagen_url = $5, pdf_url = $6, activo = $7
+       WHERE id = $8 RETURNING *`,
+      [nombre, descripcion, precio, categoria, imagen_url, pdf_url, activo, id]
     );
 
     res.json(result.rows[0]);

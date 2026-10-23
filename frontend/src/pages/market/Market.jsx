@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { FiShoppingCart, FiPlus, FiEdit2, FiTrash2, FiX, FiUpload, FiImage } from 'react-icons/fi';
+import { FiShoppingCart, FiPlus, FiEdit2, FiTrash2, FiX, FiUpload, FiImage, FiFileText } from 'react-icons/fi';
 import { productosService } from '../../services/api';
 import { formatCurrency } from '../../utils/formatters';
 import { useAuth } from '../../context/AuthContext';
 
 const CATEGORIAS = ['Todos', 'Uniformes', 'Equipaciones', 'Complementos', 'Balones', 'Bolsas', 'Negocios', 'Bazar'];
+const MAX_IMAGEN_MB = 5;
+const MAX_PDF_MB = 10;
 
 export default function Market() {
   const { isAdmin } = useAuth();
@@ -17,14 +19,18 @@ export default function Market() {
     descripcion: '',
     precio: '',
     categoria: 'Uniformes',
-    imagen_url: ''
+    imagen_url: '',
+    pdf_url: ''
   });
   const [editProducto, setEditProducto] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [espacio, setEspacio] = useState({ bytes: 0, limiteBytes: 0, limiteMB: 30, cantidad: 0 });
+  const [espacio, setEspacio] = useState({ bytes: 0, pdf_bytes: 0, total_bytes: 0, limiteBytes: 0, limiteMB: 30, cantidad: 0 });
   const [subiendoImg, setSubiendoImg] = useState(false);
+  const [subiendoPdf, setSubiendoPdf] = useState(false);
   const fileInputRef = useRef(null);
   const fileInputEditRef = useRef(null);
+  const pdfInputRef = useRef(null);
+  const pdfInputEditRef = useRef(null);
 
   const formatBytes = (b) => {
     if (!b) return '0 MB';
@@ -48,6 +54,16 @@ export default function Market() {
   const handleUpload = async (e, esEdit = false) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('El archivo debe ser una imagen (JPG, PNG, WEBP, etc.)');
+      if (e.target) e.target.value = '';
+      return;
+    }
+    if (file.size > MAX_IMAGEN_MB * 1024 * 1024) {
+      alert(`La imagen no puede superar ${MAX_IMAGEN_MB} MB`);
+      if (e.target) e.target.value = '';
+      return;
+    }
     setSubiendoImg(true);
     try {
       const res = await productosService.uploadImagen(file);
@@ -57,10 +73,42 @@ export default function Market() {
         setNuevoProducto({ ...nuevoProducto, imagen_url: res.imagen_url });
       }
       setEspacio(res.espacio || espacio);
+      alert('Imagen subida correctamente ✔');
     } catch (err) {
       alert(err.message || 'Error al subir imagen');
     } finally {
       setSubiendoImg(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const handleUploadPdf = async (e, esEdit = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== 'application/pdf') {
+      alert('El archivo debe ser un PDF');
+      if (e.target) e.target.value = '';
+      return;
+    }
+    if (file.size > MAX_PDF_MB * 1024 * 1024) {
+      alert(`El PDF no puede superar ${MAX_PDF_MB} MB`);
+      if (e.target) e.target.value = '';
+      return;
+    }
+    setSubiendoPdf(true);
+    try {
+      const res = await productosService.uploadPDF(file);
+      if (esEdit) {
+        setEditProducto({ ...editProducto, pdf_url: res.pdf_url });
+      } else {
+        setNuevoProducto({ ...nuevoProducto, pdf_url: res.pdf_url });
+      }
+      setEspacio(res.espacio || espacio);
+      alert('PDF adjuntado correctamente ✔');
+    } catch (err) {
+      alert(err.message || 'Error al subir PDF');
+    } finally {
+      setSubiendoPdf(false);
       if (e.target) e.target.value = '';
     }
   };
@@ -82,7 +130,7 @@ export default function Market() {
       await productosService.create(nuevoProducto);
       await fetchData();
       setShowModal(false);
-      setNuevoProducto({ nombre: '', descripcion: '', precio: '', categoria: 'Uniformes', imagen_url: '' });
+      setNuevoProducto({ nombre: '', descripcion: '', precio: '', categoria: 'Uniformes', imagen_url: '', pdf_url: '' });
     } catch (err) {
       alert('Error al crear producto');
     }
@@ -121,12 +169,12 @@ export default function Market() {
         <h1 className="text-2xl font-bold text-gray-800">Fénix Market</h1>
         <div className="flex items-center gap-3">
           {isAdmin && (
-            <div className="text-xs text-gray-500 bg-white rounded-lg px-3 py-2 shadow-sm" title="Almacenamiento de imágenes de productos">
-              📸 {formatBytes(espacio.bytes)} / {formatBytes(espacio.limiteBytes)}
+            <div className="text-xs text-gray-500 bg-white rounded-lg px-3 py-2 shadow-sm" title="Almacenamiento de imágenes y PDFs de productos">
+              📸 {formatBytes(espacio.total_bytes ?? espacio.bytes)} / {formatBytes(espacio.limiteBytes)}
               <div className="w-28 h-1.5 bg-gray-200 rounded-full overflow-hidden mt-1">
                 <div
-                  className={`h-full rounded-full ${espacio.bytes / espacio.limiteBytes > 0.85 ? 'bg-red-500' : 'bg-[#00A651]'}`}
-                  style={{ width: `${Math.min(100, (espacio.bytes / espacio.limiteBytes) * 100)}%` }}
+                  className={`h-full rounded-full ${(espacio.total_bytes ?? espacio.bytes) / espacio.limiteBytes > 0.85 ? 'bg-red-500' : 'bg-[#00A651]'}`}
+                  style={{ width: `${Math.min(100, ((espacio.total_bytes ?? espacio.bytes) / espacio.limiteBytes) * 100)}%` }}
                 />
               </div>
             </div>
@@ -176,6 +224,16 @@ export default function Market() {
                 <span className="text-xs text-[#00A651] font-medium">{producto.categoria}</span>
                 <h3 className="font-semibold text-gray-800">{producto.nombre}</h3>
                 <p className="text-sm text-gray-500 mb-2">{producto.descripcion}</p>
+                {producto.pdf_url && (
+                  <a
+                    href={producto.pdf_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline mb-2"
+                  >
+                    <FiFileText size={14} /> Ver PDF
+                  </a>
+                )}
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-bold text-[#00A651]">{formatCurrency(producto.precio)}</span>
                   {!isAdmin && (
@@ -275,6 +333,30 @@ export default function Market() {
                   </div>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Se optimiza automáticamente a JPEG (máx 800px) para ocupar el menor espacio.</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">PDF adjunto (opcional)</label>
+                <button
+                  type="button"
+                  onClick={() => pdfInputRef.current?.click()}
+                  disabled={subiendoPdf}
+                  className="w-full flex items-center justify-center space-x-2 border-2 border-dashed border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600 hover:border-blue-500 hover:text-blue-600 disabled:opacity-50"
+                >
+                  <FiUpload size={16} />
+                  <span>{subiendoPdf ? 'Subiendo...' : 'Subir PDF'}</span>
+                </button>
+                <input ref={pdfInputRef} type="file" accept="application/pdf" className="hidden" onChange={(e) => handleUploadPdf(e, false)} />
+                {nuevoProducto.pdf_url && (
+                  <div className="mt-2 flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                    <a href={nuevoProducto.pdf_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
+                      <FiFileText size={16} /> PDF adjunto (ver)
+                    </a>
+                    <button type="button" onClick={() => setNuevoProducto({ ...nuevoProducto, pdf_url: '' })} className="text-red-500 hover:text-red-700" title="Quitar PDF">
+                      <FiTrash2 size={16} />
+                    </button>
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 mt-1">Máximo {MAX_PDF_MB} MB. Se guarda junto al producto para descarga.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
@@ -377,6 +459,30 @@ export default function Market() {
                   </div>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Se optimiza automáticamente a JPEG (máx 800px) para ocupar el menor espacio.</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">PDF adjunto (opcional)</label>
+                <button
+                  type="button"
+                  onClick={() => pdfInputEditRef.current?.click()}
+                  disabled={subiendoPdf}
+                  className="w-full flex items-center justify-center space-x-2 border-2 border-dashed border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600 hover:border-blue-500 hover:text-blue-600 disabled:opacity-50"
+                >
+                  <FiUpload size={16} />
+                  <span>{subiendoPdf ? 'Subiendo...' : 'Subir PDF'}</span>
+                </button>
+                <input ref={pdfInputEditRef} type="file" accept="application/pdf" className="hidden" onChange={(e) => handleUploadPdf(e, true)} />
+                {editProducto.pdf_url && (
+                  <div className="mt-2 flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                    <a href={editProducto.pdf_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
+                      <FiFileText size={16} /> PDF adjunto (ver)
+                    </a>
+                    <button type="button" onClick={() => setEditProducto({ ...editProducto, pdf_url: '' })} className="text-red-500 hover:text-red-700" title="Quitar PDF">
+                      <FiTrash2 size={16} />
+                    </button>
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 mt-1">Máximo {MAX_PDF_MB} MB. Se guarda junto al producto para descarga.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>

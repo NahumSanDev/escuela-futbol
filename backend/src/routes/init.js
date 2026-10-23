@@ -81,7 +81,8 @@ router.post("/", async (req, res) => {
         descripcion TEXT,
         precio DECIMAL(10, 2) NOT NULL,
         categoria VARCHAR(100) NOT NULL,
-        imagen_url VARCHAR(500),
+        imagen_url TEXT,
+        pdf_url TEXT,
         activo BOOLEAN DEFAULT true,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -205,6 +206,20 @@ router.post("/semanas", async (req, res) => {
       error: "Error al asignar semanas",
       details: err.message,
     });
+  }
+});
+
+// Migración: imagen_url a TEXT (las imágenes base64 no caben en VARCHAR(500)) y agrega pdf_url
+router.post("/productos-media", async (req, res) => {
+  try {
+    await query(`ALTER TABLE productos ALTER COLUMN imagen_url TYPE TEXT`);
+    await query(`ALTER TABLE productos ADD COLUMN IF NOT EXISTS pdf_url TEXT`);
+    res.json({
+      message: "Columnas de productos ajustadas (imagen_url TEXT, pdf_url TEXT)",
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al migrar productos", details: err.message });
   }
 });
 
