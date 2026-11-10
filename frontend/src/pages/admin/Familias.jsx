@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FiTrash2, FiUsers, FiKey } from "react-icons/fi";
+import { FiTrash2, FiUsers, FiKey, FiEdit2 } from "react-icons/fi";
 import { familiasService, adminService } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 
@@ -10,6 +10,14 @@ export default function Familias() {
   const [resetModal, setResetModal] = useState(null);
   const [newPassword, setNewPassword] = useState("");
   const [resetMessage, setResetMessage] = useState("");
+  const [editModal, setEditModal] = useState(null);
+  const [editForm, setEditForm] = useState({
+    nombre_jugador: "",
+    nombre_padre: "",
+    email: "",
+    telefono: "",
+  });
+  const [editError, setEditError] = useState("");
 
   useEffect(() => {
     if (isAdmin) {
@@ -54,6 +62,49 @@ export default function Familias() {
       setFamilias(familias.filter((f) => f.id !== id));
     } catch (err) {
       alert("Error al eliminar familia");
+    }
+  };
+
+  const abrirEditar = (familia) => {
+    setEditModal(familia);
+    setEditError("");
+    setEditForm({
+      nombre_jugador: familia.nombre_jugador || "",
+      nombre_padre: familia.nombre_padre || "",
+      email: familia.email || "",
+      telefono: familia.telefono || "",
+    });
+  };
+
+  const handleEditSave = async () => {
+    const { nombre_jugador, nombre_padre, email, telefono } = editForm;
+    if (!nombre_jugador.trim()) {
+      setEditError("El nombre del jugador es obligatorio");
+      return;
+    }
+    if (!nombre_padre.trim()) {
+      setEditError("El nombre del padre/tutor es obligatorio");
+      return;
+    }
+    if (!email.trim()) {
+      setEditError("El email es obligatorio");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setEditError("Ingresa un email válido");
+      return;
+    }
+    try {
+      await familiasService.update(editModal.id, {
+        nombre_jugador: nombre_jugador.trim(),
+        nombre_padre: nombre_padre.trim(),
+        email: email.trim(),
+        telefono: telefono.trim(),
+      });
+      setEditModal(null);
+      fetchData();
+    } catch (err) {
+      setEditError(err.message || "Error al actualizar la familia");
     }
   };
 
@@ -138,6 +189,14 @@ export default function Familias() {
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
+                            onClick={() => abrirEditar(familia)}
+                            className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
+                            title="Editar datos del alumno y padre"
+                          >
+                            <FiEdit2 size={16} />
+                            <span className="text-sm">Editar</span>
+                          </button>
+                          <button
                             onClick={() => { setResetModal(familia); setNewPassword(""); setResetMessage(""); }}
                             className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
                             title="Resetear contraseña"
@@ -179,6 +238,94 @@ export default function Familias() {
           Compártelo solo con los padres que quieras registrar.
         </p>
       </div>
+
+      {editModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-1">Editar Datos</h2>
+            <p className="text-gray-600 text-sm mb-4">
+              Actualiza los datos del alumno y del padre/tutor
+            </p>
+
+            {editError && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm">
+                {editError}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nombre del Jugador (alumno) *
+                </label>
+                <input
+                  type="text"
+                  value={editForm.nombre_jugador}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, nombre_jugador: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00A651]"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nombre del Padre/Tutor *
+                </label>
+                <input
+                  type="text"
+                  value={editForm.nombre_padre}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, nombre_padre: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00A651]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, email: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00A651]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Teléfono
+                </label>
+                <input
+                  type="tel"
+                  value={editForm.telefono}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, telefono: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00A651]"
+                />
+              </div>
+            </div>
+
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={() => setEditModal(null)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleEditSave}
+                className="flex-1 px-4 py-2 bg-[#00A651] text-white rounded-lg hover:bg-[#008f45]"
+              >
+                Guardar Cambios
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {resetModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">

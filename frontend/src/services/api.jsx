@@ -146,6 +146,8 @@ export const productosService = {
 
 export const familiasService = {
   getAll: () => fetchAPI("/familias"),
+  update: (id, data) =>
+    fetchAPI(`/familias/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   delete: (id) => fetchAPI(`/familias/${id}`, { method: "DELETE" }),
 };
 
